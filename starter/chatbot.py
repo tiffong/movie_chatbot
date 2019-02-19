@@ -6,6 +6,7 @@ import movielens
 
 import numpy as np
 import re
+from PorterStemmer import PorterStemmer
 
 
 class Chatbot:
@@ -21,7 +22,15 @@ class Chatbot:
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
-      self.sentiment = movielens.sentiment()
+
+      sentiment = movielens.sentiment()
+      self.porterStemmer = PorterStemmer()
+      self.sentiment = {}
+      for word in sentiment:
+          self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
+
+      self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
+                             'couldnt','wont',  'cant','dont','didnt','nor','ni','werent']
 
       #############################################################################
       # TODO: Binarize the movie ratings matrix.                                  #
@@ -160,7 +169,36 @@ class Chatbot:
       :param text: a user-supplied line of text
       :returns: a numerical value for the sentiment of the text
       """
-      return 0
+
+      text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
+      text = text.lower()  # lowercase
+      words = text.split(' ') # getting individual words
+
+      score = 0
+      negate = False
+      for word in words:
+          word = self.porterStemmer.stem(word)
+          if word in self.negation_words:
+              negate = True
+          elif word in self.sentiment:
+              sentiment = self.sentiment[word]
+              if sentiment == 'pos':
+                  if negate:
+                      score -= 1
+                  else:
+                      score += 1
+              else:
+                  if negate:
+                      score += 1
+                  else:
+                      score -= 1
+              negate = False
+      if score > 0:
+          return 1
+      elif score < 0:
+          return -1
+      else:
+          return 0
 
     def extract_sentiment_for_movies(self, text):
       """Creative Feature: Extracts the sentiments from a line of text
@@ -202,7 +240,7 @@ class Chatbot:
       pass
 
     def disambiguate(self, clarification, candidates):
-      """Creative Feature: Given a list of movies that the user could be talking about 
+      """Creative Feature: Given a list of movies that the user could be talking about
       (represented as indices), and a string given by the user as clarification 
       (eg. in response to your bot saying "Which movie did you mean: Titanic (1953) 
       or Titanic (1997)?"), use the clarification to narrow down the list and return 
