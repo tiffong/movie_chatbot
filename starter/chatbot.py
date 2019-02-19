@@ -5,6 +5,7 @@
 import movielens
 
 import numpy as np
+import re
 
 
 class Chatbot:
@@ -120,7 +121,8 @@ class Chatbot:
       :param text: a user-supplied line of text that may contain movie titles
       :returns: list of movie titles that are potentially in the text
       """
-      return []
+      titles = re.findall('"(.+?)"', text)
+      return titles
 
     def find_movies_by_title(self, title):
       """ Given a movie title, return a list of indices of matching movies.
@@ -339,3 +341,8 @@ class Chatbot:
 if __name__ == '__main__':
   print('To run your chatbot in an interactive loop from the command line, run:')
   print('    python3 repl.py')
+
+# # Test zone
+# chatbot = Chatbot()
+# movies = chatbot.extract_titles('I liked "The Titanic" and "Hello World" "hi world"')
+# print(movies)
