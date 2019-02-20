@@ -310,6 +310,19 @@ class Chatbot:
       #############################################################################
       return similarity
 
+    def cosine_similarity(v1, v2):
+      numer = 0
+      total_vecone =0
+      total_vectwo =0
+      total_numerator =0
+      for i in range(len(v1)):
+          total_numerator += v1[i]*v2[i] 
+          total_vecone += v1[i]**2
+          total_vectwo += v2[i]**2
+      denom = math.sqrt(total_vecone) * math.sqrt(total_vectwo)
+
+      cosine_sim = total_numerator/denom
+      return cosine_sim   
 
     def recommend(self, user_ratings, ratings_matrix, k=10, creative=False):
       """Generate a list of indices of movies to recommend using collaborative filtering.
@@ -339,7 +352,39 @@ class Chatbot:
       #######################################################################################
 
       # Populate this list with k movie indices to recommend to the user.
+      
+      #for each movie i in the dataset
+      num_movies = np.size(ratings_matrix,0)
+
+      #get index of movies that are rated by user
+      rating_index = []
+      for i in range(len(user_ratings)):
+        if (user_ratings[i] == 1 or user_ratings[i] == -1):
+          rating_index.append(i)
+      rating_index = sorted(rating_index)
+
+      #rxi
       recommendations = []
+      recommendation = 0
+      #for each movie in the dataset
+      for i in range(num_movies):
+        movie_i = ratings_matrix[i]
+
+        #for each rating the user gave
+        for j in range(len(rating_index)):
+          user_movie_index = rating_index[j]
+
+          #user rated movie
+          movie_j = ratings_matrix[user_movie_index]
+
+          sim = cosine_similarity(movie_i,movie_j)#similarity between random movie i and user rated movie j
+          user_rating = user_ratings[user_movie_index]
+
+        recommend += sim*user_rating
+        recommendations.append(recommend)
+
+      recommendations = sorted(recommendations)
+      recommendations = recommendations[:k]
 
       #############################################################################
       #                             END OF YOUR CODE                              #
