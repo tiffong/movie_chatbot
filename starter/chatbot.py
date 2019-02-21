@@ -153,7 +153,7 @@ class Chatbot:
       for i in range(len(self.titles)):
         curr_title = self.titles[i][0]
         movie_name = curr_title.split(' (')
-        if title in movie_name[0]:
+        if title == movie_name[0]:
           indices.append(i)
       return indices
 
@@ -435,5 +435,5 @@ if __name__ == '__main__':
 # chatbot = Chatbot()
 # # # movies = chatbot.extract_titles('I liked "The Titanic" and "Hello World" "hi world"')
 # # # print(movies)
-# indices = chatbot.find_movies_by_title('Pirates of the Caribbean')
+# indices = chatbot.find_movies_by_title('Titanic')
 # print(indices)
