@@ -149,7 +149,13 @@ class Chatbot:
       :param title: a string containing a movie title
       :returns: a list of indices of matching movies
       """
-      return []
+      indices = []
+      for i in range(len(self.titles)):
+        curr_title = self.titles[i][0]
+        movie_name = curr_title.split(' (')
+        if title in movie_name[0]:
+          indices.append(i)
+      return indices
 
 
     def extract_sentiment(self, text):
@@ -427,5 +433,7 @@ if __name__ == '__main__':
 
 # # Test zone
 # chatbot = Chatbot()
-# movies = chatbot.extract_titles('I liked "The Titanic" and "Hello World" "hi world"')
-# print(movies)
+# # # movies = chatbot.extract_titles('I liked "The Titanic" and "Hello World" "hi world"')
+# # # print(movies)
+# indices = chatbot.find_movies_by_title('Pirates of the Caribbean')
+# print(indices)
