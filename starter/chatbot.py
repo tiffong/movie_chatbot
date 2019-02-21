@@ -7,6 +7,7 @@ import movielens
 import numpy as np
 import re
 from PorterStemmer import PorterStemmer
+from heapq import nlargest
 
 
 class Chatbot:
@@ -39,6 +40,12 @@ class Chatbot:
 
       # Binarize the movie ratings before storing the binarized matrix.
       self.ratings = ratings
+
+      self.user_ratings = np.zeros(len(self.ratings[0])) ##
+      self.user_ratings[0] = 1
+      self.user_ratings [24] = -1
+      self.user_ratings[32] = 1
+
       #############################################################################
       #                             END OF YOUR CODE                              #
       #############################################################################
@@ -102,10 +109,13 @@ class Chatbot:
       # possibly calling other functions. Although modular code is not graded,    #
       # it is highly recommended.                                                 #
       #############################################################################
+      
+
       if self.creative:
         response = "I processed {} in creative mode!!".format(line)
       else:
-        response = "I processed {} in starter mode!!".format(line)
+        response = self.recommend(self.user_ratings, self.ratings)
+
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -313,6 +323,21 @@ class Chatbot:
       # The starter code returns a new matrix shaped like ratings but full of zeros.
       binarized_ratings = np.zeros_like(ratings)
 
+      for i in range(len(ratings)): #row
+        for j in range(len(ratings[0])): #column
+          
+          value = 0
+          rating = ratings[i][j]
+          
+          if(rating == 0):
+            value = 0
+          elif (rating > threshold):
+            value = 1
+          elif(rating <= threshold):  
+            value = -1
+
+          binarized_ratings[i][j] = value
+
       #############################################################################
       #                             END OF YOUR CODE                              #
       #############################################################################
@@ -329,28 +354,19 @@ class Chatbot:
 
       :returns: the cosine similarity between the two vectors
       """
+      if(np.linalg.norm(u) == 0 or np.linalg.norm(v) == 0):
+        return 0
+      else:
+        similarity = np.dot(u,v)/(np.linalg.norm(u)*np.linalg.norm(v))#
+
       #############################################################################
       # TODO: Compute cosine similarity between the two vectors.
       #############################################################################
-      similarity = 0
       #############################################################################
       #                             END OF YOUR CODE                              #
       #############################################################################
       return similarity
 
-    def cosine_similarity(v1, v2):
-      numer = 0
-      total_vecone =0
-      total_vectwo =0
-      total_numerator =0
-      for i in range(len(v1)):
-          total_numerator += v1[i]*v2[i] 
-          total_vecone += v1[i]**2
-          total_vectwo += v2[i]**2
-      denom = math.sqrt(total_vecone) * math.sqrt(total_vectwo)
-
-      cosine_sim = total_numerator/denom
-      return cosine_sim   
 
     def recommend(self, user_ratings, ratings_matrix, k=10, creative=False):
       """Generate a list of indices of movies to recommend using collaborative filtering.
@@ -383,42 +399,57 @@ class Chatbot:
       
       #for each movie i in the dataset
       num_movies = np.size(ratings_matrix,0)
+      #print(num_movies)
 
-      #get index of movies that are rated by user
+      #get index of movies that ARE rated by user
+      watched = set()
       rating_index = []
       for i in range(len(user_ratings)):
         if (user_ratings[i] == 1 or user_ratings[i] == -1):
           rating_index.append(i)
+          watched.add(i)
       rating_index = sorted(rating_index)
 
       #rxi
-      recommendations = []
-      recommendation = 0
+      recommendation_ratings = np.zeros(num_movies)
+      #user_rxi_scores = np.zeros()
+      rxi = 0
+
       #for each movie in the dataset
       for i in range(num_movies):
-        movie_i = ratings_matrix[i]
+        movie_i = ratings_matrix[i] #ratings of all users for this movie 
+        #print(movie_i)
 
         #for each rating the user gave
         for j in range(len(rating_index)):
-          user_movie_index = rating_index[j]
+          user_movie_index = rating_index[j] #getting index of movies that were rated by user in user_ratings
 
           #user rated movie
           movie_j = ratings_matrix[user_movie_index]
 
-          sim = cosine_similarity(movie_i,movie_j)#similarity between random movie i and user rated movie j
+          sim = self.similarity(movie_i, movie_j) #similarity between random movie i and user rated movie j
           user_rating = user_ratings[user_movie_index]
 
-        recommend += sim*user_rating
-        recommendations.append(recommend)
+          rxi += sim*user_rating
+        #print(rxi)
+        #print(i)
 
-      recommendations = sorted(recommendations)
-      recommendations = recommendations[:k]
+        if (i in watched):
+          rxi = 0
+
+        recommendation_ratings[i] = rxi #add the recommendation for that specific movie
+        rxi = 0
+
+      #for movie in range(len(recommendation_ratings)):
+      recommendations = np.argsort(recommendation_ratings)[-k:]
+      reversed_arr = recommendations[::-1]
+      #print(type(recommendations))
+      #recommendations = np.flip(recommendations, k)
 
       #############################################################################
       #                             END OF YOUR CODE                              #
       #############################################################################
-      return recommendations
-
+      return reversed_arr.tolist()
 
     #############################################################################
     # 4. Debug info                                                             #
