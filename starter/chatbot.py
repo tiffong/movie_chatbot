@@ -150,11 +150,18 @@ class Chatbot:
       :returns: a list of indices of matching movies
       """
       indices = []
-      for i in range(len(self.titles)):
-        curr_title = self.titles[i][0]
-        movie_name = curr_title.split(' (')
-        if title == movie_name[0]:
-          indices.append(i)
+      title_split = title.split(' ')
+      if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
+        for i in range(len(self.titles)):
+          curr_title = self.titles[i][0]
+          if title == curr_title:
+            indices.append(i)
+      else: 
+        for i in range(len(self.titles)):
+          curr_title = self.titles[i][0]
+          movie_name = curr_title.split(' (')
+          if title == movie_name[0]:
+            indices.append(i)
       return indices
 
 
@@ -432,8 +439,8 @@ if __name__ == '__main__':
   print('    python3 repl.py')
 
 # # Test zone
-# chatbot = Chatbot()
-# # # movies = chatbot.extract_titles('I liked "The Titanic" and "Hello World" "hi world"')
-# # # print(movies)
-# indices = chatbot.find_movies_by_title('Titanic')
-# print(indices)
+chatbot = Chatbot()
+# # movies = chatbot.extract_titles('I liked "The Titanic" and "Hello World" "hi world"')
+# # print(movies)
+indices = chatbot.find_movies_by_title('Titanic (1997)')
+print(indices)
