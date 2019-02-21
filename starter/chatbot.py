@@ -42,9 +42,10 @@ class Chatbot:
       self.ratings = ratings
 
       self.user_ratings = np.zeros(len(self.ratings[0])) ##
-      self.user_ratings[0] = 1
-      self.user_ratings [24] = -1
-      self.user_ratings[32] = 1
+      self.positive_responses = [] #5 of each 
+      self.negative_responses = [] #5 of each
+
+      self.movie_to_sentiment = dict()
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -116,11 +117,42 @@ class Chatbot:
       
       else:
         
+        #the movies that the user inputted
         movies = self.extract_titles(format(line))
+
         sentence_sentiment = self.extract_sentiment(format(line))
 
+        response = ""
+
         if (len(movies) > 0):
+
+
           response = 'Great. Give me another movie and review.'
+          if(sentence_sentiment == -1): #they liked the movie
+            
+            self.movie_to_sentiment[movies[0]] = -1
+
+            response = "Sorry you didn't like " + str(movies[0]) + "."
+            
+            if(len(self.movie_to_sentiment) < 5):
+              response += '\n' + "Tell me about another movie."   
+
+
+          elif(sentence_sentiment == 1): #they didnt like the movie
+            self.movie_to_sentiment[movies[0]] = 1
+
+            response = "Glad you liked " + str(movies[0]) 
+
+            if(len(self.movie_to_sentiment) < 5):
+              response += '\n' + "Tell me about another movie."
+
+            else:
+              response = 'todo'
+              #recommendations = self.recommend(user_ratings, ratings_matrix, k=10, creative=False)
+
+          else:
+            response = 'Sorry I do not understand. Please give me information about a movie'.format(line)
+
         else: 
           response = 'Sorry I do not understand. Please give me information about a movie'.format(line)
 
