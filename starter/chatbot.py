@@ -17,6 +17,7 @@ class Chatbot:
       self.name = 'moviebot'
 
       self.creative = creative
+      self.articles = ['A', 'An', 'The']
 
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
@@ -150,13 +151,27 @@ class Chatbot:
       :returns: a list of indices of matching movies
       """
       indices = []
+
       title_split = title.split(' ')
       if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
+        if title_split[0] in self.articles:
+          title = ''
+          for i in range(1, len(title_split) - 1):
+            title += title_split[i]
+            if i < len(title_split) - 2: title += ' '
+          title +=', ' + title_split[0]
+          title += ' ' + title_split[len(title_split) - 1]
         for i in range(len(self.titles)):
           curr_title = self.titles[i][0]
           if title == curr_title:
             indices.append(i)
       else: 
+        if title_split[0] in self.articles:
+          title = ''
+          for i in range(1, len(title_split)):
+            title += title_split[i]
+            if i < len(title_split) - 1: title += ' '
+          title += ', ' + title_split[0]
         for i in range(len(self.titles)):
           curr_title = self.titles[i][0]
           movie_name = curr_title.split(' (')
@@ -439,8 +454,8 @@ if __name__ == '__main__':
   print('    python3 repl.py')
 
 # # Test zone
-chatbot = Chatbot()
-# # movies = chatbot.extract_titles('I liked "The Titanic" and "Hello World" "hi world"')
-# # print(movies)
-indices = chatbot.find_movies_by_title('Titanic (1997)')
-print(indices)
+# chatbot = Chatbot()
+# # # movies = chatbot.extract_titles('I liked "The Titanic" and "Hello World" "hi world"')
+# # # print(movies)
+# indices = chatbot.find_movies_by_title('The American President')
+# print(indices)
