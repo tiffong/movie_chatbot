@@ -60,7 +60,7 @@ class Chatbot:
       # TODO: Write a short greeting message                                      #
       #############################################################################
 
-      greeting_message = "How can I help you?"
+      greeting_message = "Hi! I'm MovieBot! Ready to watch some new movies? First I'll find out your taste in movies. Tell about a movie you've seen and how you liked it."
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -73,7 +73,7 @@ class Chatbot:
       # TODO: Write a short farewell message                                      #
       #############################################################################
 
-      goodbye_message = "Have a nice day!"
+      goodbye_message = "Bye!"
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -113,8 +113,16 @@ class Chatbot:
 
       if self.creative:
         response = "I processed {} in creative mode!!".format(line)
+      
       else:
-        response = self.recommend(self.user_ratings, self.ratings)
+        
+        movies = self.extract_titles(format(line))
+        sentence_sentiment = self.extract_sentiment(format(line))
+
+        if (len(movies) > 0):
+          response = 'Great. Give me another movie and review.'
+        else: 
+          response = 'Sorry I do not understand. Please give me information about a movie'.format(line)
 
 
       #############################################################################
