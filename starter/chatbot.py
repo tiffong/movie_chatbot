@@ -177,6 +177,7 @@ class Chatbot:
               movie_title = movie_title.split(' (')[0]
               response = random.choice(self.announcing_recommendation_responses)
               response += '\n' + random.choice(self.recommendation_templates).replace('{}', movie_title)
+              response += '\n' + "Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)"
         else:
             response = str(len(movies)) + random.choice(self.neutral_responses) + '  Please give me information about a movie.'
 
