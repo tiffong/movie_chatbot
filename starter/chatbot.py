@@ -19,12 +19,12 @@ class Chatbot:
       self.name = 'moviebot'
 
       self.creative = creative
-      self.articles = ['A', 'An', 'The']
 
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
+      self.articles = ['A', 'An', 'The']
 
       sentiment = movielens.sentiment()
       self.porterStemmer = PorterStemmer()
@@ -40,9 +40,8 @@ class Chatbot:
       #############################################################################
 
       # Binarize the movie ratings before storing the binarized matrix.
-      self.ratings = ratings
+      self.ratings = self.binarize(ratings)
 
-      self.user_ratings = np.zeros(len(self.ratings[0])) ##
       self.positive_responses = ["I am glad you liked \"{}\".",
                                  "So you enjoyed the film \"{}\".",
                                  "So you enjoyed the movie \"{}\". Good to know.",
@@ -55,7 +54,7 @@ class Chatbot:
                                  "So you did not like the film \"{}\".",
                                  "I see that \"{}\" was not a good movie for you.",
                                  "You did not think the movie \"{}\" was good.",
-                                 "Its sad to hear that you did not enjoy \"{}\".",
+                                 "It's sad to hear that you did not enjoy \"{}\".",
                                  "\"{}\" was a bad film for you.",
                                  "Ok. I understand that you disliked \"{}\"."]  # 5 of each
       self.neutral_responses = ["Sorry. I did not get that.",
@@ -74,7 +73,7 @@ class Chatbot:
                                        "I believe that you would enjoy \"{}\".",
                                        "\"{}\" would be a good film for you to watch."]
 
-      self.movie_to_sentiment = dict()
+      self.user_sentiment = np.zeros(len(self.titles))
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -151,26 +150,35 @@ class Chatbot:
 
         sentence_sentiment = self.extract_sentiment(format(line))
 
-        if len(movies) > 0:
-          if sentence_sentiment == 0:
-            response = random.choice(self.neutral_responses) + '  Please give me information about a movie.'
+        if len(movies) > 1:
+          response = "Please tell me about one movie at a time. Go ahead."
+        elif len(movies) == 1:
+          movie_indices = self.find_movies_by_title(movies[0])
+          if len(movie_indices) == 0:
+            response = '"' + movies[0] + '" is not a valid movie. Please tell me about a movie that exists.'
+          elif sentence_sentiment == 0:
+            print("here")
+            response = "here" + random.choice(self.neutral_responses) + '  Please give me information about a movie.'
           else:
             if sentence_sentiment == -1:
-              self.movie_to_sentiment[movies[0]] = -1
+              self.user_sentiment[movie_indices[0]] = -1
               response = random.choice(self.negative_responses)
               response = response.replace('{}', movies[0])
             else:
-              self.movie_to_sentiment[movies[0]] = 1
+              self.user_sentiment[movie_indices[0]] = 1
               response = random.choice(self.positive_responses)
               response = response.replace('{}', movies[0])
-            if len(self.movie_to_sentiment) < 5:
+            if np.count_nonzero(self.user_sentiment) < 5:
               response += '\n' + random.choice(self.asking_for_more_responses)
             else:
-              recommendation = "TODO"  # TODO : recommend a movie
+              recommendation = self.recommend(self.user_sentiment, self.ratings, k=1, creative=False)  # TODO : recommend a movie
+              recommended_movie_index = recommendation[0]
+              movie_title = self.titles[recommended_movie_index][0]
+              movie_title = movie_title.split(' (')[0]
               response = random.choice(self.announcing_recommendation_responses)
-              response += '\n' + random.choice(self.recommendation_templates).replace('{}', recommendation)
+              response += '\n' + random.choice(self.recommendation_templates).replace('{}', movie_title)
         else:
-            response = random.choice(self.neutral_responses) + '  Please give me information about a movie.'
+            response = str(len(movies)) + random.choice(self.neutral_responses) + '  Please give me information about a movie.'
 
       #############################################################################
       #                             END OF YOUR CODE                              #
