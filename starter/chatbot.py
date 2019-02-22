@@ -8,6 +8,7 @@ import numpy as np
 import re
 from PorterStemmer import PorterStemmer
 from heapq import nlargest
+import random
 
 
 class Chatbot:
@@ -42,8 +43,36 @@ class Chatbot:
       self.ratings = ratings
 
       self.user_ratings = np.zeros(len(self.ratings[0])) ##
-      self.positive_responses = [] #5 of each 
-      self.negative_responses = [] #5 of each
+      self.positive_responses = ["I am glad you liked \"{}\".",
+                                 "So you enjoyed the film \"{}\".",
+                                 "So you enjoyed the movie \"{}\". Good to know.",
+                                 "I understand that \"{}\" was an enjoyable movie for you.",
+                                 "You liked the movie \"{}\".",
+                                 "It's nice to hear that you enjoyed \"{}\".",
+                                 "\"{}\" was a good film for you. ",
+                                 "Great! I understand that you thought \"{}\" was good."]  # 5 of each
+      self.negative_responses = ["Sorry you didn't enjoy \"{}\".",
+                                 "So you did not like the film \"{}\".",
+                                 "I see that \"{}\" was not a good movie for you.",
+                                 "You did not think the movie \"{}\" was good.",
+                                 "Its sad to hear that you did not enjoy \"{}\".",
+                                 "\"{}\" was a bad film for you.",
+                                 "Ok. I understand that you disliked \"{}\"."]  # 5 of each
+      self.neutral_responses = ["Sorry. I did not get that.",
+                                "I did not understand.",
+                                "I could not make out what you meant by that."]
+      self.asking_for_more_responses = ["Tell me your opinion on another film.",
+                                        "What is a another film you liked or disliked?",
+                                        "Can you give me another movie?",
+                                        "I need another one of your film preferences.",
+                                        "Can you describe to me another of your movie reactions?"]
+      self.announcing_recommendation_responses = ["I have enough information to give you a recommendation.",
+                                                  "That's enough movies for me to recommend to you a new one.",
+                                                  "I can now recommend a new movie for you."]
+      self.recommendation_templates = ["I recommend that you watch \"{}\".",
+                                       "I suggest that you check out the film \"{}\".",
+                                       "I believe that you would enjoy \"{}\".",
+                                       "\"{}\" would be a good film for you to watch."]
 
       self.movie_to_sentiment = dict()
 
@@ -122,40 +151,26 @@ class Chatbot:
 
         sentence_sentiment = self.extract_sentiment(format(line))
 
-        response = ""
-
-        if (len(movies) > 0):
-
-
-          response = 'Great. Give me another movie and review.'
-          if(sentence_sentiment == -1): #they liked the movie
-            
-            self.movie_to_sentiment[movies[0]] = -1
-
-            response = "Sorry you didn't like " + str(movies[0]) + "."
-            
-            if(len(self.movie_to_sentiment) < 5):
-              response += '\n' + "Tell me about another movie."   
-
-
-          elif(sentence_sentiment == 1): #they didnt like the movie
-            self.movie_to_sentiment[movies[0]] = 1
-
-            response = "Glad you liked " + str(movies[0]) 
-
-            if(len(self.movie_to_sentiment) < 5):
-              response += '\n' + "Tell me about another movie."
-
-            else:
-              response = 'todo'
-              #recommendations = self.recommend(user_ratings, ratings_matrix, k=10, creative=False)
-
+        if len(movies) > 0:
+          if sentence_sentiment == 0:
+            response = random.choice(self.neutral_responses) + '  Please give me information about a movie.'
           else:
-            response = 'Sorry I do not understand. Please give me information about a movie'.format(line)
-
-        else: 
-          response = 'Sorry I do not understand. Please give me information about a movie'.format(line)
-
+            if sentence_sentiment == -1:
+              self.movie_to_sentiment[movies[0]] = -1
+              response = random.choice(self.negative_responses)
+              response = response.replace('{}', movies[0])
+            else:
+              self.movie_to_sentiment[movies[0]] = 1
+              response = random.choice(self.positive_responses)
+              response = response.replace('{}', movies[0])
+            if len(self.movie_to_sentiment) < 5:
+              response += '\n' + random.choice(self.asking_for_more_responses)
+            else:
+              recommendation = "TODO"  # TODO : recommend a movie
+              response = random.choice(self.announcing_recommendation_responses)
+              response += '\n' + random.choice(self.recommendation_templates).replace('{}', recommendation)
+        else:
+            response = random.choice(self.neutral_responses) + '  Please give me information about a movie.'
 
       #############################################################################
       #                             END OF YOUR CODE                              #
