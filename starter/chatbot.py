@@ -157,8 +157,8 @@ class Chatbot:
           if len(movie_indices) == 0:
             response = '"' + movies[0] + '" is not a valid movie. Please tell me about a movie that exists.'
           elif sentence_sentiment == 0:
-            print("here")
-            response = "here" + random.choice(self.neutral_responses) + '  Please give me information about a movie.'
+            #print("here")
+            response = random.choice(self.neutral_responses) + ' Please give me information about a movie.'
           else:
             if sentence_sentiment == -1:
               self.user_sentiment[movie_indices[0]] = -1
@@ -179,7 +179,7 @@ class Chatbot:
               response += '\n' + random.choice(self.recommendation_templates).replace('{}', movie_title)
               response += '\n' + "Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)"
         else:
-            response = str(len(movies)) + random.choice(self.neutral_responses) + '  Please give me information about a movie.'
+            response = random.choice(self.neutral_responses) + ' Please give me information about a movie.'
 
       #############################################################################
       #                             END OF YOUR CODE                              #
