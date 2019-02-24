@@ -18,13 +18,13 @@ class Chatbot:
       # The chatbot's default name is `moviebot`. Give your chatbot a new name.
       self.name = 'moviebot'
 
-      self.creative = creative
+      self.creative = True
 
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
-      self.articles = ['A', 'An', 'The']
+      self.articles = ['a', 'an', 'the']
 
       sentiment = movielens.sentiment()
       self.porterStemmer = PorterStemmer()
@@ -157,7 +157,6 @@ class Chatbot:
           if len(movie_indices) == 0:
             response = '"' + movies[0] + '" is not a valid movie. Please tell me about a movie that exists.'
           elif sentence_sentiment == 0:
-            #print("here")
             response = random.choice(self.neutral_responses) + ' Please give me information about a movie.'
           else:
             if sentence_sentiment == -1:
@@ -205,7 +204,20 @@ class Chatbot:
       :param text: a user-supplied line of text that may contain movie titles
       :returns: list of movie titles that are potentially in the text
       """
-      titles = re.findall('"(.+?)"', text)
+      titles = []
+      if self.creative:
+        titles = re.findall('"(.+?)"', text)
+        tokens = text.split(' ')
+        for i in range(len(tokens), 0, -1):
+          for j in range(i):
+            test_tokens = tokens[j:i]
+            test_title = ' '.join(test_tokens)
+            movie_search = self.find_movies_by_title(test_title)
+            if len(movie_search) > 0:
+              titles.append(test_title)
+              return list(set(titles))
+      else:
+        titles = re.findall('"(.+?)"', text)
       return titles
 
     def find_movies_by_title(self, title):
@@ -224,6 +236,7 @@ class Chatbot:
       :param title: a string containing a movie title
       :returns: a list of indices of matching movies
       """
+      title = title.lower()
       indices = []
 
       title_split = title.split(' ')
@@ -236,7 +249,7 @@ class Chatbot:
           title +=', ' + title_split[0]
           title += ' ' + title_split[len(title_split) - 1]
         for i in range(len(self.titles)):
-          curr_title = self.titles[i][0]
+          curr_title = self.titles[i][0].lower()
           if title == curr_title:
             indices.append(i)
       else: 
@@ -247,7 +260,7 @@ class Chatbot:
             if i < len(title_split) - 1: title += ' '
           title += ', ' + title_split[0]
         for i in range(len(self.titles)):
-          curr_title = self.titles[i][0]
+          curr_title = self.titles[i][0].lower()
           movie_name = curr_title.split(' (')
           if title == movie_name[0]:
             indices.append(i)
@@ -550,7 +563,7 @@ if __name__ == '__main__':
 
 # # Test zone
 # chatbot = Chatbot()
-# # # movies = chatbot.extract_titles('I liked "The Titanic" and "Hello World" "hi world"')
-# # # print(movies)
-# indices = chatbot.find_movies_by_title('The American President')
+# titles = chatbot.extract_titles("I thought 10 things i hate about you was great")
+# indices = chatbot.find_movies_by_title(titles[0])
 # print(indices)
+# print(chatbot.titles[indices[0]])
