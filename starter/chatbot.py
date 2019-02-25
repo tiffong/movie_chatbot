@@ -74,11 +74,22 @@ class Chatbot:
                                         "Can you describe to me another of your movie reactions?"]
       self.announcing_recommendation_responses = ["I have enough information to give you a recommendation.",
                                                   "That's enough movies for me to recommend to you a new one.",
-                                                  "I can now recommend a new movie for you."]
+                                                  "I can now recommend a new movie for you.",
+                                                  "Based on your preferences, I can give you a recommendation."]
+      self.announcing_recommendation_responses_multiple = ["I have enough information to give you some recommendations.",
+                                                  "That's enough movies for me to recommend to you new ones.",
+                                                  "I can now recommend new movies for you.",
+                                                  "Based on your preferences, I can give you some recommendations!"]
+
       self.recommendation_templates = ["I recommend that you watch \"{}\".",
                                        "I suggest that you check out the film \"{}\".",
                                        "I believe that you would enjoy \"{}\".",
                                        "\"{}\" would be a good film for you to watch."]
+      self.recommendation_multiple_movies = ["I recommend that you watch these movies: \"{}\".",
+                                       "I suggest that you check out these films: \"{}\".",
+                                       "I believe that you would enjoy these films: \"{}\".",
+                                       "\"{}\" would be good films for you to watch."] 
+
 
       self.user_sentiment = np.zeros(len(self.titles))
 
@@ -183,13 +194,27 @@ class Chatbot:
             if np.count_nonzero(self.user_sentiment) < 5:
               response += '\n' + random.choice(self.asking_for_more_responses)
             else: #user has given 5 movies
-              recommendation = self.recommend(self.user_sentiment, self.ratings, k=1, creative=False)  
+              recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=False)  
               recommended_movie_index = recommendation[0]
-              movie_title = self.titles[recommended_movie_index][0]
-              movie_title = movie_title.split(' (')[0]
-              response = random.choice(self.announcing_recommendation_responses)
-              response += '\n' + random.choice(self.recommendation_templates).replace('{}', movie_title)
-              response += '\n' + "Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)"
+              recommended_movies = []
+              for i in range(len(recommendation)):
+                movie_title = self.titles[recommendation[i]][0]
+                movie_title = movie_title.split(' (')[0]
+                recommended_movies.append(movie_title)
+              num = random.randint(0,5)
+              #num = 5
+
+              if (num < 3): #give one movie recommendation
+                response = random.choice(self.announcing_recommendation_responses) 
+                response += '\n' + random.choice(self.recommendation_templates).replace('{}', recommended_movies[0])
+                response += '\n' + "Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)"
+              else: #give three movie recommendations
+                movies_list = recommended_movies[0] + ', ' + recommended_movies[1] + ', and ' + recommended_movies[2]
+                response = random.choice(self.announcing_recommendation_responses_multiple)
+                response += '\n' + random.choice(self.recommendation_multiple_movies).replace('{}', movies_list)
+                response += '\n' + "Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)"
+
+
         else:
             response = random.choice(self.neutral_responses) + ' Please give me information about a movie.'
 
