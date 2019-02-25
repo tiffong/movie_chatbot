@@ -6,7 +6,7 @@ import movielens
 
 import numpy as np
 import re
-from PorterStemmer import PorterStemmer
+# from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
 
@@ -18,7 +18,7 @@ class Chatbot:
       # The chatbot's default name is `moviebot`. Give your chatbot a new name.
       self.name = 'moviebot'
 
-      self.creative = True
+      self.creative = creative
 
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
@@ -27,13 +27,19 @@ class Chatbot:
       self.articles = ['a', 'an', 'the']
 
       sentiment = movielens.sentiment()
-      self.porterStemmer = PorterStemmer()
-      self.sentiment = {}
-      for word in sentiment:
-          self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
+      # self.porterStemmer = PorterStemmer()
+      self.sentiment = sentiment
+      # self.sentiment = {}
+      # for word in sentiment:
+      #     self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
 
       self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
                              'couldnt','wont',  'cant','dont','didnt','nor','ni','werent']
+      self.intensifiers = ['amazingly', 'astoundingly', 'bloody', 'dreadfully', 'colossally', 'especially',
+                           'exceptionally','excessively', 'extremely', 'extraordinarily', 'fantastically', 'frightfully', 'incredibly',
+                           'insanely', 'outrageously', 'phenomenally', 'quite', 'radically', 'rather', 'real', 'really',
+                           'remarkably', 'ridiculously', 'so', 'soo', 'sooo', 'soooo', 'strikingly', 'super',
+                           'supremely', 'terribly', 'terrifically', 'too', 'totally', 'unusually', 'very', 'wicked']
 
       #############################################################################
       # TODO: Binarize the movie ratings matrix.                                  #
@@ -222,7 +228,8 @@ class Chatbot:
               titles.append(test_title)
               return list(set(titles))
       else:
-        titles = re.findall('"(.+?)"', text)
+        titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
+      print(titles)
       return titles
 
     def find_movies_by_title(self, title):
@@ -314,6 +321,9 @@ class Chatbot:
       :returns: a numerical value for the sentiment of the text
       """
 
+      text = re.sub("([\"]).*?([\"])", "\g<1>\g<2>", text)
+      text = text.replace("\"", "").strip()
+      print(text)
       text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
       text = text.lower()  # lowercase
       words = text.split(' ') # getting individual words
@@ -321,7 +331,7 @@ class Chatbot:
       score = 0
       negate = False
       for word in words:
-          word = self.porterStemmer.stem(word)
+          # word = self.porterStemmer.stem(word)
           if word in self.negation_words:
               negate = True
           elif word in self.sentiment:
@@ -427,22 +437,32 @@ class Chatbot:
       #############################################################################
 
       # The starter code returns a new matrix shaped like ratings but full of zeros.
-      binarized_ratings = np.zeros_like(ratings)
+      # binarized_ratings = np.zeros_like(ratings)
 
-      for i in range(len(ratings)): #row
-        for j in range(len(ratings[0])): #column
+      # for i in range(len(ratings)): #row
+      #   for j in range(len(ratings[0])): #column
           
-          value = 0
-          rating = ratings[i][j]
+      #     value = 0
+      #     rating = ratings[i][j]
           
-          if(rating == 0):
-            value = 0
-          elif (rating > threshold):
-            value = 1
-          elif(rating <= threshold):  
-            value = -1
+      #     if(rating == 0):
+      #       value = 0
+      #     elif (rating > threshold):
+      #       value = 1
+      #     elif(rating <= threshold):  
+      #       value = -1
 
-          binarized_ratings[i][j] = value
+      #     binarized_ratings[i][j] = value
+
+      binarized_ratings = np.array(ratings)
+      binarized_ratings = np.where(binarized_ratings > threshold, 5, binarized_ratings)
+      binarized_ratings = np.where(binarized_ratings == 0, 3, binarized_ratings)
+      binarized_ratings = np.where(binarized_ratings <= threshold, 0, binarized_ratings)
+
+      binarized_ratings = np.where(binarized_ratings == 5, 1, binarized_ratings)
+      binarized_ratings = np.where(binarized_ratings == 0, -1, binarized_ratings)
+      binarized_ratings = np.where(binarized_ratings == 3, 0, binarized_ratings)
+      
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -591,8 +611,9 @@ if __name__ == '__main__':
   print('    python3 repl.py')
 
 # # Test zone
-# chatbot = Chatbot()
-# titles = chatbot.extract_titles("I thought 10 things i hate about you was great")
+chatbot = Chatbot()
+titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"')
+
 # indices = chatbot.find_movies_by_title(titles[0])
 # print(indices)
 # print(chatbot.titles[indices[0]])
