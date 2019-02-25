@@ -145,9 +145,7 @@ class Chatbot:
         movies = self.extract_titles(format(line))
         sentence_sentiment = self.extract_sentiment(format(line))
 
-        response = "I processed {} in creative mode!!".format(line)
-        
-
+        response = "I processed in creative mode!!".format(line)
 
       else:
         
@@ -218,6 +216,7 @@ class Chatbot:
           for j in range(i):
             test_tokens = tokens[j:i]
             test_title = ' '.join(test_tokens)
+            #print(test_title)
             movie_search = self.find_movies_by_title(test_title)
             if len(movie_search) > 0:
               titles.append(test_title)
@@ -243,10 +242,19 @@ class Chatbot:
       :returns: a list of indices of matching movies
       """
       title = title.lower()
+      #print(title)
       indices = []
+
+
+
+      #print(self.titles[45])
+
+
 
       title_split = title.split(' ')
       if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
+        
+        #print(title_split[len(title_split) - 1])
         if title_split[0] in self.articles:
           title = ''
           for i in range(1, len(title_split) - 1):
@@ -267,10 +275,25 @@ class Chatbot:
           title += ', ' + title_split[0]
         for i in range(len(self.titles)):
           curr_title = self.titles[i][0].lower()
+          
+            #TODO: GET ALTERNATE TITLES
+          if (self.creative):
+            x = curr_title.split(' (') #all of the titles split up
+            for alternate_title in range(len(x) - 1): #iterate through titles
+              match = re.search(r'(.*)\)', x[alternate_title], re.IGNORECASE) #match regex
+              if (match):             
+                #if (x[alternate_title] == match.group(1)):
+                print(match.group())
+
           movie_name = curr_title.split(' (')
+          #print(movie_name)
           if title == movie_name[0]:
             indices.append(i)
       return indices
+
+
+        
+
 
 
     def extract_sentiment(self, text):
