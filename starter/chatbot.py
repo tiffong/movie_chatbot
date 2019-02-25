@@ -409,22 +409,32 @@ class Chatbot:
       #############################################################################
 
       # The starter code returns a new matrix shaped like ratings but full of zeros.
-      binarized_ratings = np.zeros_like(ratings)
+      # binarized_ratings = np.zeros_like(ratings)
 
-      for i in range(len(ratings)): #row
-        for j in range(len(ratings[0])): #column
+      # for i in range(len(ratings)): #row
+      #   for j in range(len(ratings[0])): #column
           
-          value = 0
-          rating = ratings[i][j]
+      #     value = 0
+      #     rating = ratings[i][j]
           
-          if(rating == 0):
-            value = 0
-          elif (rating > threshold):
-            value = 1
-          elif(rating <= threshold):  
-            value = -1
+      #     if(rating == 0):
+      #       value = 0
+      #     elif (rating > threshold):
+      #       value = 1
+      #     elif(rating <= threshold):  
+      #       value = -1
 
-          binarized_ratings[i][j] = value
+      #     binarized_ratings[i][j] = value
+
+      binarized_ratings = np.array(ratings)
+      binarized_ratings = np.where(binarized_ratings > threshold, 5, binarized_ratings)
+      binarized_ratings = np.where(binarized_ratings == 0, 3, binarized_ratings)
+      binarized_ratings = np.where(binarized_ratings <= threshold, 0, binarized_ratings)
+
+      binarized_ratings = np.where(binarized_ratings == 5, 1, binarized_ratings)
+      binarized_ratings = np.where(binarized_ratings == 0, -1, binarized_ratings)
+      binarized_ratings = np.where(binarized_ratings == 3, 0, binarized_ratings)
+      
 
       #############################################################################
       #                             END OF YOUR CODE                              #
