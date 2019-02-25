@@ -6,9 +6,10 @@ import movielens
 
 import numpy as np
 import re
-# from PorterStemmer import PorterStemmer
+from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
+import nltk
 
 
 class Chatbot:
@@ -27,11 +28,11 @@ class Chatbot:
       self.articles = ['a', 'an', 'the']
 
       sentiment = movielens.sentiment()
-      # self.porterStemmer = PorterStemmer()
-      self.sentiment = sentiment
-      # self.sentiment = {}
-      # for word in sentiment:
-      #     self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
+      self.porterStemmer = PorterStemmer()
+      # self.sentiment = sentiment
+      self.sentiment = {}
+      for word in sentiment:
+          self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
 
       self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
                              'couldnt','wont',  'cant','dont','didnt','nor','ni','werent']
@@ -230,7 +231,7 @@ class Chatbot:
               return list(set(titles))
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
-      print(titles)
+      # print(titles)
       return titles
 
     def find_movies_by_title(self, title):
@@ -300,7 +301,7 @@ class Chatbot:
 
       text = re.sub("([\"]).*?([\"])", "\g<1>\g<2>", text)
       text = text.replace("\"", "").strip()
-      print(text)
+      # print(text)
       text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
       text = text.lower()  # lowercase
       words = text.split(' ') # getting individual words
@@ -308,7 +309,7 @@ class Chatbot:
       score = 0
       negate = False
       for word in words:
-          # word = self.porterStemmer.stem(word)
+          word = self.porterStemmer.stem(word)
           if word in self.negation_words:
               negate = True
           elif word in self.sentiment:
@@ -323,7 +324,7 @@ class Chatbot:
                       score += 1
                   else:
                       score -= 1
-              negate = False
+              # negate = False
       if score > 0:
           return 1
       elif score < 0:
