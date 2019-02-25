@@ -35,7 +35,7 @@ class Chatbot:
           self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
 
       self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
-                             'couldnt','wont',  'cant','dont','didnt','nor','ni','werent']
+                             'couldnt','wont',  'cant','dont','didnt','nor','ni','werent', 'never','none','nobody','nothing','scarcely']
       self.intensifiers = ['amazingly', 'astoundingly', 'bloody', 'dreadfully', 'colossally', 'especially',
                            'exceptionally','excessively', 'extremely', 'extraordinarily', 'fantastically', 'frightfully', 'incredibly',
                            'insanely', 'outrageously', 'phenomenally', 'quite', 'radically', 'rather', 'real', 'really',
