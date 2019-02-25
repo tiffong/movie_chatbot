@@ -34,6 +34,11 @@ class Chatbot:
 
       self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
                              'couldnt','wont',  'cant','dont','didnt','nor','ni','werent']
+      self.intensifiers = ['amazingly', 'astoundingly', 'bloody', 'dreadfully', 'colossally', 'especially',
+                           'exceptionally','excessively', 'extremely', 'extraordinarily', 'fantastically', 'frightfully', 'incredibly',
+                           'insanely', 'outrageously', 'phenomenally', 'quite', 'radically', 'rather', 'real', 'really',
+                           'remarkably', 'ridiculously', 'so', 'soo', 'sooo', 'soooo', 'strikingly', 'super',
+                           'supremely', 'terribly', 'terrifically', 'too', 'totally', 'unusually', 'very', 'wicked']
 
       #############################################################################
       # TODO: Binarize the movie ratings matrix.                                  #
