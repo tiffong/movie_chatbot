@@ -141,8 +141,14 @@ class Chatbot:
       
 
       if self.creative:
+        #the movies that the user inputted
+        movies = self.extract_titles(format(line))
+        sentence_sentiment = self.extract_sentiment(format(line))
+
         response = "I processed {} in creative mode!!".format(line)
-      
+        
+
+
       else:
         
         #the movies that the user inputted
