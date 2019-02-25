@@ -18,7 +18,7 @@ class Chatbot:
       # The chatbot's default name is `moviebot`. Give your chatbot a new name.
       self.name = 'moviebot'
 
-      self.creative = True
+      self.creative = creative
 
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
@@ -223,7 +223,8 @@ class Chatbot:
               titles.append(test_title)
               return list(set(titles))
       else:
-        titles = re.findall('"(.+?)"', text)
+        titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
+      print(titles)
       return titles
 
     def find_movies_by_title(self, title):
@@ -578,8 +579,9 @@ if __name__ == '__main__':
   print('    python3 repl.py')
 
 # # Test zone
-# chatbot = Chatbot()
-# titles = chatbot.extract_titles("I thought 10 things i hate about you was great")
+chatbot = Chatbot()
+titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"')
+
 # indices = chatbot.find_movies_by_title(titles[0])
 # print(indices)
 # print(chatbot.titles[indices[0]])
