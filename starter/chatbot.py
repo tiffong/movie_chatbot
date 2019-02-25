@@ -232,11 +232,6 @@ class Chatbot:
               return list(set(titles))
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
-<<<<<<< HEAD
-      #print(titles)
-=======
-      # print(titles)
->>>>>>> 4d59be65770c1999fb0209f7c9c764c49a0220c6
       return titles
 
     def find_movies_by_title(self, title):
@@ -330,11 +325,7 @@ class Chatbot:
 
       text = re.sub("([\"]).*?([\"])", "\g<1>\g<2>", text)
       text = text.replace("\"", "").strip()
-<<<<<<< HEAD
-      #print(text)
-=======
-      # print(text)
->>>>>>> 4d59be65770c1999fb0209f7c9c764c49a0220c6
+
       text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
       text = text.lower()  # lowercase
       words = text.split(' ') # getting individual words
