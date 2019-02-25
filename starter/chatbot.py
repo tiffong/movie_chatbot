@@ -165,11 +165,12 @@ class Chatbot:
           response = "Please tell me about one movie at a time. Go ahead."
         elif len(movies) == 1:
           movie_indices = self.find_movies_by_title(movies[0])
-          if len(movie_indices) == 0:
+          
+          if len(movie_indices) == 0: #did not give valid movie
             response = '"' + movies[0] + '" is not a valid movie. Please tell me about a movie that exists.'
-          elif sentence_sentiment == 0:
+          elif sentence_sentiment == 0: #gave a neutral response
             response = random.choice(self.neutral_responses) + ' Please give me information about a movie.'
-          else:
+          else: #user gave valid movie and non-neutral response
             if sentence_sentiment == -1:
               self.user_sentiment[movie_indices[0]] = -1
               response = random.choice(self.negative_responses)
@@ -178,10 +179,11 @@ class Chatbot:
               self.user_sentiment[movie_indices[0]] = 1
               response = random.choice(self.positive_responses)
               response = response.replace('{}', movies[0])
+            
             if np.count_nonzero(self.user_sentiment) < 5:
               response += '\n' + random.choice(self.asking_for_more_responses)
-            else:
-              recommendation = self.recommend(self.user_sentiment, self.ratings, k=1, creative=False)  # TODO : recommend a movie
+            else: #user has given 5 movies
+              recommendation = self.recommend(self.user_sentiment, self.ratings, k=1, creative=False)  
               recommended_movie_index = recommendation[0]
               movie_title = self.titles[recommended_movie_index][0]
               movie_title = movie_title.split(' (')[0]
@@ -230,7 +232,6 @@ class Chatbot:
               return list(set(titles))
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
-      # print(titles)
       return titles
 
     def find_movies_by_title(self, title):
@@ -324,7 +325,7 @@ class Chatbot:
 
       text = re.sub("([\"]).*?([\"])", "\g<1>\g<2>", text)
       text = text.replace("\"", "").strip()
-      # print(text)
+
       text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
       text = text.lower()  # lowercase
       words = text.split(' ') # getting individual words
