@@ -21,14 +21,16 @@ class Chatbot:
       # The chatbot's default name is `moviebot`. Give your chatbot a new name.
       self.name = 'moviebot'
 
-      self.creative = True
+      self.creative = creative
+      self.mult_movies_select = False
+      self.mult_movie_options = []
 
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
-      self.articles = ['a', 'an', 'the', 
-      'die', 'le', 'la', 'il', 'elle', 'l', 'un', 
+      self.articles = ['a', 'an', 'the',
+      'die', 'le', 'la', 'il', 'elle', 'l', 'un',
       'los', 'les', 'das', 'i', 'lo'
       'der', 'det', 'den', 'jie' ]
 
@@ -100,7 +102,7 @@ class Chatbot:
       self.recommendation_multiple_movies = ["I recommend that you watch these movies: {}",
                                        "I suggest that you check out these films: {}",
                                        "I believe that you would enjoy these films: {}",
-                                       "Here are some good films for you to watch: {}"] 
+                                       "Here are some good films for you to watch: {}"]
 
 
       self.user_sentiment = np.zeros(len(self.titles))
@@ -144,6 +146,10 @@ class Chatbot:
     # 2. Modules 2 and 3: extraction and transformation                           #
     ###############################################################################
 
+    def process_helper(self, movies, sentiment):
+      #TODO: place process code that will be used in both starter and creative mode
+      return 0
+
     def process(self, line):
       """Process a line of input from the REPL and generate a response.
 
@@ -168,7 +174,7 @@ class Chatbot:
       # possibly calling other functions. Although modular code is not graded,    #
       # it is highly recommended.                                                 #
       #############################################################################
-      
+
 
       if self.creative:
         #the movies that the user inputted
@@ -177,8 +183,17 @@ class Chatbot:
 
         response = "I processed in creative mode!!".format(line)
 
+        #if multiple movies were matched based on prev line, user must clarify
+        if self.mult_movies_select is True:
+          movie_match = False
+          for i in self.mult_movie_options:
+            if line in self.titles[i][0]:
+              movie_match = True
+          if not movie_match:
+            response = "Please clarify which movie you are referring to."
+
       else:
-        
+
         #the movies that the user inputted
         movies = self.extract_titles(format(line))
 
@@ -188,7 +203,7 @@ class Chatbot:
           response = "Please tell me about one movie at a time. Go ahead."
         elif len(movies) == 1:
           movie_indices = self.find_movies_by_title(movies[0])
-          
+
           if len(movie_indices) == 0: #did not give valid movie
             response = '"' + movies[0] + '" is not a valid movie. Please tell me about a movie that exists.'
           elif sentence_sentiment == 0: #gave a neutral response
@@ -202,11 +217,11 @@ class Chatbot:
               self.user_sentiment[movie_indices[0]] = 1
               response = random.choice(self.positive_responses)
               response = response.replace('{}', movies[0])
-            
+
             if np.count_nonzero(self.user_sentiment) < 5:
               response += '\n' + random.choice(self.asking_for_more_responses)
             else: #user has given 5 movies
-              recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=False)  
+              recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=False)
               recommended_movie_index = recommendation[0]
               recommended_movies = []
               for i in range(len(recommendation)):
@@ -217,7 +232,7 @@ class Chatbot:
               #num = 5
 
               if (num < 3): #give one movie recommendation
-                response = random.choice(self.announcing_recommendation_responses) 
+                response = random.choice(self.announcing_recommendation_responses)
                 response += '\n' + random.choice(self.recommendation_templates).replace('{}', recommended_movies[0])
                 response += '\n' + "Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)"
               else: #give three movie recommendations
@@ -256,13 +271,16 @@ class Chatbot:
       """
       titles = []
       if self.creative:
-        titles = re.findall('"(.+?)"', text)
+        titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
+        text = re.sub(r'[?.!:]', '', text)
+        print(text)
         tokens = text.split(' ')
+        #gets substrings of the text input and tries to find movie titles that match
+        #if match is found, the title is added to the list
         for i in range(len(tokens), 0, -1):
           for j in range(i):
             test_tokens = tokens[j:i]
             test_title = ' '.join(test_tokens)
-            #print(test_title)
             movie_search = self.find_movies_by_title(test_title)
             if len(movie_search) > 0:
               titles.append(test_title)
@@ -290,81 +308,89 @@ class Chatbot:
       :returns: a list of indices of matching movies
       """
       title = title.lower()
-      #print('below is the title')
-      #print(title)
-      #print('above is the title')
       indices = []
+
       title_split = title.split(' ')
-
-      #for titles like Titanic (1995)
-      if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
-        
-        #print(title_split[len(title_split) - 1])
-        if title_split[0] in self.articles:
-          title = ''
-          for i in range(1, len(title_split) - 1):
-            title += title_split[i]
-            if i < len(title_split) - 2: title += ' '
-          title +=', ' + title_split[0]
-          title += ' ' + title_split[len(title_split) - 1]
-        for i in range(len(self.titles)):
-          curr_title = self.titles[i][0].lower()
-          if title == curr_title:
-            indices.append(i)
-      else:
-        #for titles like "the notebook"
-        if title_split[0] in self.articles:
-          title = ''
-          for i in range(1, len(title_split)):
-            title += title_split[i]
-            if i < len(title_split) - 1: title += ' '
-          title += ', ' + title_split[0]
-
-        for i in range(len(self.titles)):
-          curr_title = self.titles[i][0].lower()
-          movie_name = curr_title.split(' (')
-          if title == movie_name[0]:
-            indices.append(i)
+      movie_stripped_title = re.sub(r'[?.!:]', '', title)
+      stripped_title_split = movie_stripped_title.split(" ")
 
       if(self.creative):
-        
+
+        #disambiguate part 1
         for i in range(len(self.titles)):
           curr_title = self.titles[i][0].lower()
-          alternate_titles = curr_title.split(' (') #all of the titles split up
-          
-          if(len(alternate_titles)) == 2: #if it only has 1 title
-            if title == alternate_titles[0]:
-              indices.append(i)
-          else: #if there are more than 1 title, return indices still
-            for j in range(len(alternate_titles) - 1): #iterate through diff titles
-              titles = re.findall(r'(?:a.k.a.\ )*([A-Za-z0-9 ()?!.\',:-]*)[\)]*', alternate_titles[j])
-              #titles: ['hundra', '', 'ringen som klev ut genom f', '', 'nstret och f', '', 'rsvann', '']
-              #titles: ['the unexpected virtue of ignorance', '']
-              #titles: ['fast and the furious 6, the)', '']
-              #print(titles)
-              for x in range(len(titles)-1): 
-                if len(titles) > 3: #foreign accents should not be accounted for
-                  continue
-                else: #these are alternate movies without foreign accents
-                  extracted_title = titles[0] # eg. 'fast and the furious 6, the)'
 
-                  if extracted_title.endswith(')'): #take off extra ) at end
-                    extracted_title = extracted_title[:-1]
-                  
-                  if extracted_title == title:
+
+          stripped_title = curr_title.replace(r':', '') #replace all extraneous punctuation in the title
+          if title in curr_title: #if our title is a substring in the stripped title, check if all tokens exist
+            tokens = stripped_title.split(' ')
+            for t in range(len(tokens) - len(stripped_title_split) + 1):
+              if tokens[t:t+len(stripped_title_split)] == stripped_title_split: #if tokens exist, append the index
+                indices.append(i)
+                break
+
+          alternate_titles = curr_title.split(' (') #list of all alternate titles
+          #print(alternate_titles)
+          # if(len(alternate_titles)) == 2: #if it only has 1 title
+          #   if title == alternate_titles[0]:
+          #     indices.append(i)
+
+          #else: #if there are more than 1 valid title
+          for j in range(len(alternate_titles) - 1): #iterate through diff titles
+            titles = re.findall(r'(?:a.k.a.\ )*([A-Za-z0-9 ()?!.\',:-]*)[\)]*', alternate_titles[j])
+            #print(titles)
+            #titles: ['hundra', '', 'ringen som klev ut genom f', '', 'nstret och f', '', 'rsvann', '']
+            #titles: ['the unexpected virtue of ignorance', '']
+            #titles: ['fast and the furious 6, the)', '']
+            #titles ['doragon b', '', 'ru z: tatta hitori no saishuu kessen - furiiza ni itonda z senshi kakarotto no chichi)', '']
+            #print(titles)
+
+            if len(titles) > 3: #foreign accents should not be accounted for
+              continue
+            else: #these are alternate movies without foreign accents
+              extracted_title = titles[0] # eg. 'fast and the furious 6, the)'
+
+              if extracted_title.endswith(')'): #take off extra ) at end --> fast and the furious 6, the
+                extracted_title = extracted_title[:-1]
+
+              if (extracted_title == title and i not in indices):
+                #print(extracted_title)
+                indices.append(i)
+
+              extracted_title_split = extracted_title.split(', ') #for alternate titles that have 'terminal, the' format
+              if(len(extracted_title_split) > 1):
+                if (extracted_title_split[1] in self.articles):
+                  #print(title_split[1])
+                  extracted_title = extracted_title_split[1] + ' ' + extracted_title_split[0] #eg 'the hunt'
+                  if (extracted_title == title):
                     #print(extracted_title)
                     indices.append(i)
 
-                  title_split = extracted_title.split(', ')
-                  if(len(title_split) > 1):
-                    if (title_split[1] in self.articles):
-                      #print(title_split[1])
-                      extracted_title = title_split[1] + ' ' + title_split[0] #eg 'the hunt'
-                      if (extracted_title == title):
-                        #print(extracted_title)
-                        indices.append(i)
-
-
+      else: #if not in creative mode
+        if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]): #if user included a date
+          if title_split[0] in self.articles:
+            title = ''
+            for i in range(1, len(title_split) - 1):
+              title += title_split[i]
+              if i < len(title_split) - 2: title += ' '
+            title +=', ' + title_split[0]
+            title += ' ' + title_split[len(title_split) - 1]
+          for i in range(len(self.titles)):
+            curr_title = self.titles[i][0].lower()
+            if title == curr_title:
+              indices.append(i)
+        else: #if not user did not include date
+          if title_split[0] in self.articles:
+            title = ''
+            for i in range(1, len(title_split)):
+              title += title_split[i]
+              if i < len(title_split) - 1: title += ' '
+            title += ', ' + title_split[0]
+          for i in range(len(self.titles)):
+            curr_title = self.titles[i][0].lower()
+            movie_name = curr_title.split(' (')
+            if title == movie_name[0]:
+              indices.append(i)
       return indices
 
 
@@ -488,7 +514,7 @@ class Chatbot:
       from the provided title, and with edit distance at most max_distance.
 
       - If no movies have titles within max_distance of the provided title, return an empty list.
-      - Otherwise, if there's a movie closer in edit distance to the given title 
+      - Otherwise, if there's a movie closer in edit distance to the given title
         than all other movies, return a 1-element list containing its index.
       - If there is a tie for closest movie, return a list with the indices of all movies
         tying for minimum edit distance to the given movie.
@@ -500,14 +526,32 @@ class Chatbot:
       :param max_distance: the maximum edit distance to search for
       :returns: a list of movie indices with titles closest to the given title and within edit distance max_distance
       """
+      scores = dict()
+      title = title.lower() #title user typed in
+      for i in range(len(self.titles)):
+          database_title = self.titles[i][0].lower() #title from database
 
-      pass
+          distance = nltk.edit_distance(title, database_title)
+          if distance < max_distance:
+            indices = find_movies_by_title(database_title)
+
+            if distance not in scores:
+              scores[distance] = []
+              for index in indices:
+                scores[distance].append(index)
+            else:
+              for index in indices:
+                scores[distance].append(index)
+
+
+      return 0
+
 
     def disambiguate(self, clarification, candidates):
       """Creative Feature: Given a list of movies that the user could be talking about
-      (represented as indices), and a string given by the user as clarification 
-      (eg. in response to your bot saying "Which movie did you mean: Titanic (1953) 
-      or Titanic (1997)?"), use the clarification to narrow down the list and return 
+      (represented as indices), and a string given by the user as clarification
+      (eg. in response to your bot saying "Which movie did you mean: Titanic (1953)
+      or Titanic (1997)?"), use the clarification to narrow down the list and return
       a smaller list of candidates (hopefully just 1!)
 
       - If the clarification uniquely identifies one of the movies, this should return a 1-element
@@ -517,7 +561,7 @@ class Chatbot:
 
       Example:
         chatbot.disambiguate("1997", [1359, 2716]) should return [1359]
-      
+
       :param clarification: user input intended to disambiguate between the given movies
       :param candidates: a list of movie indices
       :returns: a list of indices corresponding to the movies identified by the clarification
@@ -551,15 +595,15 @@ class Chatbot:
 
       # for i in range(len(ratings)): #row
       #   for j in range(len(ratings[0])): #column
-          
+
       #     value = 0
       #     rating = ratings[i][j]
-          
+
       #     if(rating == 0):
       #       value = 0
       #     elif (rating > threshold):
       #       value = 1
-      #     elif(rating <= threshold):  
+      #     elif(rating <= threshold):
       #       value = -1
 
       #     binarized_ratings[i][j] = value
@@ -572,7 +616,7 @@ class Chatbot:
       binarized_ratings = np.where(binarized_ratings == 5, 1, binarized_ratings)
       binarized_ratings = np.where(binarized_ratings == 0, -1, binarized_ratings)
       binarized_ratings = np.where(binarized_ratings == 3, 0, binarized_ratings)
-      
+
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -632,7 +676,7 @@ class Chatbot:
       #######################################################################################
 
       # Populate this list with k movie indices to recommend to the user.
-      
+
       #for each movie i in the dataset
       num_movies = np.size(ratings_matrix,0)
       #print(num_movies)
@@ -653,7 +697,7 @@ class Chatbot:
 
       #for each movie in the dataset
       for i in range(num_movies):
-        movie_i = ratings_matrix[i] #ratings of all users for this movie 
+        movie_i = ratings_matrix[i] #ratings of all users for this movie
         #print(movie_i)
 
         #for each rating the user gave
@@ -728,4 +772,3 @@ indices = chatbot.find_movies_by_title('the terminal')
 
 # print('indeces:')
 # print(indices)
-
