@@ -50,6 +50,7 @@ class Chatbot:
 
       self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
                              'couldnt','wont',  'cant','dont','didnt','nor','ni','werent', 'never','none','nobody','nothing','scarcely']
+      self.negation_words_end = ['not','neither']
       self.intensifiers = ['amazingly', 'astoundingly', 'bloody', 'dreadfully', 'colossally', 'especially',
                            'exceptionally','excessively', 'extremely', 'extraordinarily', 'fantastically', 'frightfully', 'incredibly',
                            'insanely', 'outrageously', 'phenomenally', 'quite', 'radically', 'rather', 'real', 'really',
@@ -396,7 +397,7 @@ class Chatbot:
 
 
 
-    def extract_sentiment(self, text):
+    def extract_sentiment(self, text): #TODO: combine creative and simple into cleaner version
       """Extract a sentiment rating from a line of text.
 
       You should return -1 if the sentiment of the text is negative, 0 if the
@@ -413,7 +414,7 @@ class Chatbot:
       :param text: a user-supplied line of text
       :returns: a numerical value for the sentiment of the text
       """
-      sentiment_mapper = {'pos': 2, 'neg': -2}
+
       def tokenize(text):
         if self.creative:
           for phrase in self.end_intensifiers:
@@ -424,35 +425,52 @@ class Chatbot:
 
         text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
         text = text.lower()  # lowercase
-        words = text.split(' ')  # getting individual words
+        # words = text.split(' ')  # getting individual words
+        words =nltk.word_tokenize(text)
         return words
 
       words = tokenize(text)
       if not self.creative:
-        score = 0
+        sentiment_mapper = {'pos': 1, 'neg': -1}
+        score = []
         negate = False
-        for word in words:
+        for i,word in enumerate(words):
           word = self.porterStemmer.stem(word)
+          words[i] = word
+          # examples of this case 'I like not "Avatar"'     'I like neither "Speed" nor "Speed 2"'
+          if word in self.negation_words_end and i != 0 and words[i-1] in self.sentiment:
+            # print(i, word, score, words)
+            score[-1] *= -1
+            # print(score)
+            continue
           if word in self.negation_words:
             negate = True
           elif word in self.sentiment:
             sentiment = sentiment_mapper[self.sentiment[word]]
             if negate:
               sentiment *= -1
-            score += sentiment
+            # score += sentiment
+            score.append(sentiment)
+        if len(score) == 0: return 0
+        score = np.sum(score)
         if score > 0:
           return 1
         elif score < 0:
           return -1
       else:
+        sentiment_mapper = {'pos': 2, 'neg': -2}
         scores = []
         negate = False
         intense = False
-        for word in words:
+        for i,word in enumerate(words):
           if word == '__intense__':
             if len(scores) > 0:
               scores[-1] = scores[-1] * 2
             continue
+          if word in self.negation_words_end:
+            if word in self.negation_words_end and i != 0 and (words[i - 1] in self.sentiment or words[i-1] in self.creative_sentiment):
+              scores[-1] *= -1
+              continue
           if word in self.negation_words:
             negate = True
             continue
@@ -460,6 +478,7 @@ class Chatbot:
             intense = True
             continue
           word = self.porterStemmer.stem(word)
+          words[i] = word
           if word in self.creative_sentiment:
             score = int(self.creative_sentiment[word])
           elif word in self.sentiment:
@@ -501,7 +520,25 @@ class Chatbot:
       :returns: a list of tuples, where the first item in the tuple is a movie title,
         and the second is the sentiment in the text toward that movie
       """
-      pass
+
+      def index_movies(text):
+        index = {}
+        expression = r'(\".*?\")'
+        matches = re.findall(expression, text)
+        count = 1
+        for i, match in enumerate(matches):
+          id = '__' + str(i) + '__'
+          index[id] = match
+          text = text.replace(match, id)
+        return index, text
+
+      index, text = index_movies(text)
+      tokens = text.split(' ')
+      sentiment = self.extract_sentiment(text)
+      sentiments = []
+      for movie in index:
+          sentiments.append((index[movie],sentiment))
+      return sentiments
 
     def find_movies_closest_to_title(self, title, max_distance=3):
       """Creative Feature: Given a potentially misspelled movie title,

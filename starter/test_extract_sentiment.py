@@ -22,3 +22,7 @@ test_and_print('I really love "The Matrix"')
 test_and_print('I loved "Zootopia"')
 test_and_print('"Zootopia" was terrible.')
 test_and_print('I really reeally liked "Zootopia"!!!')
+
+
+test_and_print('I liked neither "Zootopia" nor "Frozen" !!!')
+test_and_print('I liked not "Zootopia" nor "Frozen" !!!')
