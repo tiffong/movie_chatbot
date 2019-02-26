@@ -40,7 +40,14 @@ class Chatbot:
       self.sentiment = {}
       for word in sentiment:
           self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
-      self.settt = set()
+      with open('deps/polarity_scores.txt', 'r') as f:
+        reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+        next(reader)
+        creative_sentiment = dict(reader)
+      self.creative_sentiment = {}
+      for word in creative_sentiment:
+        self.creative_sentiment[self.porterStemmer.stem(word)] = creative_sentiment[word]
+
       self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
                              'couldnt','wont',  'cant','dont','didnt','nor','ni','werent', 'never','none','nobody','nothing','scarcely']
       self.intensifiers = ['amazingly', 'astoundingly', 'bloody', 'dreadfully', 'colossally', 'especially',
@@ -435,7 +442,7 @@ class Chatbot:
             score += sentiment
         if score > 0:
           return 1
-      elif score < 0:
+        elif score < 0:
           return -1
       else:
         scores = []
@@ -466,6 +473,17 @@ class Chatbot:
           scores.append(score)
         if len(scores) == 0:
           return 0
+        final_score = round(np.average(scores))
+        if final_score >= 2:
+          return 2
+        elif final_score >= 1:
+          return 1
+        elif final_score >= 0:
+          return 0
+        elif final_score >= -1:
+          return -1
+        else:
+          return -2
 
     def extract_sentiment_for_movies(self, text):
       """Creative Feature: Extracts the sentiments from a line of text
