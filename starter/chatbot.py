@@ -475,12 +475,13 @@ class Chatbot:
       scores = dict()
       title = title.lower() #title user typed in
       for i in range(len(self.titles)):
-          database_title = self.titles[i][0].lower() #title from database
-
+          database_title = self.titles[i][0].lower().split(' (')[0] #title from database
+          
           distance = nltk.edit_distance(title, database_title)
-          if distance < max_distance:
-            indices = find_movies_by_title(database_title)
 
+          if distance < max_distance:
+            indices = self.find_movies_by_title(database_title)
+            
             if distance not in scores:
               scores[distance] = []
               for index in indices:
@@ -489,8 +490,13 @@ class Chatbot:
               for index in indices:
                 scores[distance].append(index)
 
-      
-      return 0
+      minimum = max_distance
+      for key in scores:
+        if(key < minimum):
+          minimum = key
+
+      return scores[minimum]
+
 
 
     def disambiguate(self, clarification, candidates):
@@ -712,4 +718,7 @@ if __name__ == '__main__':
 
 # # Test zone
 chatbot = Chatbot(True)
+
+print(chatbot.find_movies_closest_to_title("Te", max_distance = 3)) #[8082, 4511, 1664]
+
 
