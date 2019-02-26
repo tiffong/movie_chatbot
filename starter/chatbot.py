@@ -8,6 +8,7 @@ import re
 from PorterStemmer import PorterStemmer
 import random
 import csv
+import nltk
 
 
 class Chatbot:
@@ -524,12 +525,18 @@ class Chatbot:
       """
       scores = dict()
       title = title.lower() #title user typed in
+
+      minimum = max_distance
       for i in range(len(self.titles)):
           database_title = self.titles[i][0].lower().split(' (')[0] #title from database
-          
-          distance = nltk.edit_distance(title, database_title)
+          #print(database_title)
 
-          if distance < max_distance:
+          distance = nltk.edit_distance(title, database_title)
+          #distance = nltk.edit_distance(title, "batman")
+          #print(distance)
+
+          if distance <= minimum:
+            minimum = distance
             indices = self.find_movies_by_title(database_title)
             
             if distance not in scores:
@@ -538,14 +545,19 @@ class Chatbot:
                 scores[distance].append(index)
             else:
               for index in indices:
-                scores[distance].append(index)
+                if index not in scores[distance]:
+                  scores[distance].append(index)
 
-      minimum = max_distance
+      localmin = minimum
       for key in scores:
-        if(key < minimum):
-          minimum = key
+        if(key <= localmin):
+          localmin = key
 
-      return scores[minimum]
+      if localmin in scores:
+        return scores[localmin]
+      else:
+        return []
+
 
 
 
@@ -773,6 +785,6 @@ chatbot = Chatbot()
 #print(titles)
 indices = chatbot.find_movies_by_title('the terminal')
 
-
-print(chatbot.find_movies_closest_to_title("Te", max_distance = 3)) #[8082, 4511, 1664]
+print('testing for movies closest to:')
+print(chatbot.find_movies_closest_to_title("Te", max_distance = 3)) 
 
