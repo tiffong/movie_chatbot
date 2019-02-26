@@ -287,6 +287,36 @@ class Chatbot:
       indices = []
       title_split = title.split(' ')
 
+      #for titles like Titanic (1995)
+      if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
+        
+        #print(title_split[len(title_split) - 1])
+        if title_split[0] in self.articles:
+          title = ''
+          for i in range(1, len(title_split) - 1):
+            title += title_split[i]
+            if i < len(title_split) - 2: title += ' '
+          title +=', ' + title_split[0]
+          title += ' ' + title_split[len(title_split) - 1]
+        for i in range(len(self.titles)):
+          curr_title = self.titles[i][0].lower()
+          if title == curr_title:
+            indices.append(i)
+      else:
+        #for titles like "the notebook"
+        if title_split[0] in self.articles:
+          title = ''
+          for i in range(1, len(title_split)):
+            title += title_split[i]
+            if i < len(title_split) - 1: title += ' '
+          title += ', ' + title_split[0]
+
+        for i in range(len(self.titles)):
+          curr_title = self.titles[i][0].lower()
+          movie_name = curr_title.split(' (')
+          if title == movie_name[0]:
+            indices.append(i)
+
       if(self.creative):
         
         for i in range(len(self.titles)):
@@ -301,16 +331,19 @@ class Chatbot:
               titles = re.findall(r'(?:a.k.a.\ )*([A-Za-z0-9 ()?!.\',:-]*)[\)]*', alternate_titles[j])
               #titles: ['hundra', '', 'ringen som klev ut genom f', '', 'nstret och f', '', 'rsvann', '']
               #titles: ['the unexpected virtue of ignorance', '']
+              #titles: ['fast and the furious 6, the)', '']
+              #print(titles)
               for x in range(len(titles)-1): 
                 if len(titles) > 3: #foreign accents should not be accounted for
                   continue
                 else: #these are alternate movies without foreign accents
-                  extracted_title = titles[0] # eg. 'the unexpected virtue of ignorance'
+                  extracted_title = titles[0] # eg. 'fast and the furious 6, the)'
 
                   if extracted_title.endswith(')'): #take off extra ) at end
                     extracted_title = extracted_title[:-1]
                   
                   if extracted_title == title:
+                    #print(extracted_title)
                     indices.append(i)
 
                   title_split = extracted_title.split(', ')
@@ -319,49 +352,11 @@ class Chatbot:
                       #print(title_split[1])
                       extracted_title = title_split[1] + ' ' + title_split[0] #eg 'the hunt'
                       if (extracted_title == title):
+                        #print(extracted_title)
                         indices.append(i)
-                      
 
-      else:
-        #print(title_split)
-        if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
-          
-          #print(title_split[len(title_split) - 1])
-          if title_split[0] in self.articles:
-            title = ''
-            for i in range(1, len(title_split) - 1):
-              title += title_split[i]
-              if i < len(title_split) - 2: title += ' '
-            title +=', ' + title_split[0]
-            title += ' ' + title_split[len(title_split) - 1]
-          for i in range(len(self.titles)):
-            curr_title = self.titles[i][0].lower()
-            if title == curr_title:
-              indices.append(i)
-        else:
 
-          if title_split[0] in self.articles:
-            title = ''
-            for i in range(1, len(title_split)):
-              title += title_split[i]
-              if i < len(title_split) - 1: title += ' '
-            title += ', ' + title_split[0]
-
-          for i in range(len(self.titles)):
-            curr_title = self.titles[i][0].lower()
-
-            #GET ALTERNATE TITLES IN CREATIVE MODE
-            
-            movie_name = curr_title.split(' (')
-          #print(movie_name)
-            if title == movie_name[0]:
-              indices.append(i)
-
-   
       return indices
-
-
-        
 
 
 
@@ -674,10 +669,10 @@ if __name__ == '__main__':
 
 # # Test zone
 chatbot = Chatbot()
-#titles = chatbot.extract_titles('I liked "the string"')
-#print(titles[0])
-indices = chatbot.find_movies_by_title('Se7en')
+#titles = chatbot.extract_titles('I liked The Notebook!')
 #print(titles)
+indices = chatbot.find_movies_by_title('the terminal')
+
 print('indeces:')
 print(indices)
-#print(chatbot.titles[indices[0]])
+
