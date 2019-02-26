@@ -22,7 +22,7 @@ class Chatbot:
       self.name = 'moviebot'
 
       self.creative = creative
-      self.mult_movies_select = False
+      self.mult_movies_select = creative
       self.mult_movie_options = []
 
       # This matrix has the following shape: num_movies x num_users
@@ -37,7 +37,7 @@ class Chatbot:
       sentiment = movielens.sentiment()
       self.porterStemmer = PorterStemmer()
       # self.sentiment = sentiment
-      self.sentiment = {}
+      self.sentiment = {} #TODO: combine the sentiments for  creative instead of two
       for word in sentiment:
           self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
       with open('deps/polarity_scores.txt', 'r') as f:   #TODO: stem this data beforehand
@@ -68,6 +68,12 @@ class Chatbot:
       # Binarize the movie ratings before storing the binarized matrix.
       self.ratings = self.binarize(ratings)
 
+      self.super_positive_responses = ["Oh! so you loved \"{}\"!",
+                                       "So \"{}\" is really good!",
+                                       "I am happy that you enjoyed \"{}\" so much.",
+                                       "You really liked \"{}\".",
+                                       "\"{}\" was REALLY good to you. Nice.",
+                                       "You think that \"{}\" was excellent!"]
       self.positive_responses = ["I am glad you liked \"{}\".",
                                  "So you enjoyed the film \"{}\".",
                                  "So you enjoyed the movie \"{}\". Good to know.",
@@ -75,14 +81,20 @@ class Chatbot:
                                  "You liked the movie \"{}\".",
                                  "It's nice to hear that you enjoyed \"{}\".",
                                  "\"{}\" was a good film for you. ",
-                                 "Great! I understand that you thought \"{}\" was good."]  # 5 of each
+                                 "Great! I understand that you thought \"{}\" was good."]
       self.negative_responses = ["Sorry you didn't enjoy \"{}\".",
                                  "So you did not like the film \"{}\".",
                                  "I see that \"{}\" was not a good movie for you.",
                                  "You did not think the movie \"{}\" was good.",
                                  "It's sad to hear that you did not enjoy \"{}\".",
                                  "\"{}\" was a bad film for you.",
-                                 "Ok. I understand that you disliked \"{}\"."]  # 5 of each
+                                 "Ok. I understand that you disliked \"{}\"."]
+      self.super_negative_responses = ["You HATED \"{}\"!",
+                             "\"{}\" was terrible for you.",
+                             "I sorry \"{}\" was such a bad movie for you.",
+                             "The movie \"{}\" was absolutely terrible for you.",
+                             "You think \"{}\" is a VERY bad film.",
+                             "You don't want to see any films like \"{}\" because that movie was AWFUL."]
       self.neutral_responses = ["Sorry. I did not get that.",
                                 "I did not understand.",
                                 "I could not make out what you meant by that."]
@@ -155,7 +167,7 @@ class Chatbot:
       #TODO: place process code that will be used in both starter and creative mode
       return 0
 
-    def process(self, line):
+    def process(self, line):  #TODO: there might be too many new lines floating around
       """Process a line of input from the REPL and generate a response.
 
       This is the method that is called by the REPL loop directly with user input.
@@ -180,22 +192,77 @@ class Chatbot:
       # it is highly recommended.                                                 #
       #############################################################################
 
+      def get_response_for_sentiment(movie,sentiment):  #TODO: use this function for simple mode as well
+        if sentiment == 2:
+          return random.choice(self.super_positive_responses).format(movie)
+        if sentiment == 1:
+          return random.choice(self.positive_responses).format(movie)
+        if sentiment == 0:
+          return random.choice(self.neutral_responses)
+        if sentiment == -1:
+          return random.choice(self.negative_responses).format(movie)
+        else:
+          return random.choice(self.super_negative_responses).format(movie)
+
+      def add_reccomendations_to_response(): #TODO: maybe clean this up and use it for the simple as well
+        recommendation_reponses = []
+        recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=False)
+        recommended_movies = []
+        for i in range(len(recommendation)):
+          movie_title = self.titles[recommendation[i]][0]
+          movie_title = movie_title.split(' (')[0]
+          recommended_movies.append(movie_title)
+        num = random.randint(0, 6)
+        # num = 5
+
+        if (num < 3):  # give one movie recommendation
+          recommendation_reponses.append(random.choice(self.announcing_recommendation_responses))
+          recommendation_reponses.append('\n' + random.choice(self.recommendation_templates).replace('{}', recommended_movies[0]))
+          recommendation_reponses.append('\n' + "Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)")
+        else:  # give three movie recommendations
+          movies_list = '\"' + recommended_movies[0] + ',\" \"' + recommended_movies[1] + ',\" and \"' + \
+                        recommended_movies[2] + '.\"'
+          recommendation_reponses.append(random.choice(self.announcing_recommendation_responses_multiple))
+          recommendation_reponses.append('\n' + random.choice(self.recommendation_multiple_movies).replace('{}', movies_list))
+          recommendation_reponses.append('\n' + "Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)")
+        return ''.join(recommendation_reponses)
 
       if self.creative:
+        responses = []
         #the movies that the user inputted
-        movies = self.extract_titles(format(line))
-        sentence_sentiment = self.extract_sentiment(format(line))
+        # movies = self.extract_titles(line)  #TODO this is not working for me right now
+        movie_sentiments = self.extract_sentiment_for_movies(line)
+        movies = [pair[0] for pair in movie_sentiments]
+        if len(movies) > 0:
+          for movie,sentiment in movie_sentiments:
+            movie_indices = self.find_movies_by_title(movie[1:-1])
+            if len(movie_indices) == 0:
+              responses.append("{} is not a valid movie.\n".format(movie[1:-1]))
+            elif len(movie_indices) > 1:
+              responses.append("Please be more specific about the movie title \"{}\".\n".format(movie[1:-1]))
+            else:
+              responses.append(get_response_for_sentiment(movie[1:-1],sentiment))
+              self.user_sentiment[movie_indices[0]] = sentiment
+          if np.count_nonzero(self.user_sentiment) < 5:
+            responses.append('\n' + random.choice(self.asking_for_more_responses))
+          else:
+            responses.append(add_reccomendations_to_response())
+        else:
+          responses.append("{} is not a valid movie.".format(movies[0]))
+        response = '\n'.join(responses)
 
-        response = "I processed in creative mode!!".format(line)
+
+        # response = "I processed in creative mode!!".format(line)
+
 
         #if multiple movies were matched based on prev line, user must clarify
-        if self.mult_movies_select is True:
-          movie_match = False
-          for i in self.mult_movie_options:
-            if line in self.titles[i][0]:
-              movie_match = True
-          if not movie_match:
-            response = "Please clarify which movie you are referring to."
+        # if self.mult_movies_select is True:
+        #   movie_match = False
+        #   for i in self.mult_movie_options:
+        #     if line in self.titles[i][0]:
+        #       movie_match = True
+        #   if not movie_match:
+        #     response = "Please clarify which movie you are referring to."
 
       else:
 
@@ -849,8 +916,8 @@ if __name__ == '__main__':
 # # Test zone
 
 chatbot = Chatbot(True)
-#titles = chatbot.extract_titles('I liked The Notebook!')
-#print(titles)
+# titles = chatbot.extract_titles('I liked The Notebook!')
+# print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
 
