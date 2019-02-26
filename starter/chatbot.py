@@ -9,9 +9,7 @@ import re
 from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
-import nltk
 from collections import defaultdict
-
 # import nltk
 
 
@@ -305,17 +303,21 @@ class Chatbot:
       indices = []
 
       title_split = title.split(' ')
+      movie_stripped_title = re.sub(r'[?.!:]', '', title)
+      stripped_title_split = movie_stripped_title.split(" ")
+
       if(self.creative):
 
         #disambiguate part 1
         for i in range(len(self.titles)):
           curr_title = self.titles[i][0].lower()
           
+
           stripped_title = curr_title.replace(r':', '') #replace all extraneous punctuation in the title
-          if title in stripped_title: #if our title is a substring in the stripped title, check if all tokens exist
+          if title in curr_title: #if our title is a substring in the stripped title, check if all tokens exist
             tokens = stripped_title.split(' ')
-            for t in range(len(tokens) - len(title_split) + 1):
-              if tokens[t:t+len(title_split)] == title_split: #if tokens exist, append the index
+            for t in range(len(tokens) - len(stripped_title_split) + 1):
+              if tokens[t:t+len(stripped_title_split)] == stripped_title_split: #if tokens exist, append the index
                 indices.append(i)
                 break
 
@@ -703,4 +705,3 @@ if __name__ == '__main__':
 
 # # Test zone
 chatbot = Chatbot(True)
-
