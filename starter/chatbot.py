@@ -470,17 +470,26 @@ class Chatbot:
       :param max_distance: the maximum edit distance to search for
       :returns: a list of movie indices with titles closest to the given title and within edit distance max_distance
       """
-      # scores = defaultdict(int)
-      # title = title.lower() #title user typed in
-      # for i in range(len(self.titles)):
-      #     database_title = self.titles[i][0].lower() #title from database
+      scores = dict()
+      title = title.lower() #title user typed in
+      for i in range(len(self.titles)):
+          database_title = self.titles[i][0].lower() #title from database
 
-      #     distance = nltk.edit_distance(title, database_title)
-      #     if distance < max_distance:
+          distance = nltk.edit_distance(title, database_title)
+          if distance < max_distance:
+            indices = find_movies_by_title(database_title)
 
+            if distance not in scores:
+              scores[distance] = []
+              for index in indices:
+                scores[distance].append(index)
+            else:
+              for index in indices:
+                scores[distance].append(index)
 
+      
+      return 0
 
-      pass
 
     def disambiguate(self, clarification, candidates):
       """Creative Feature: Given a list of movies that the user could be talking about
