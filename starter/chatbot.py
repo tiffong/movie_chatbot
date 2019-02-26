@@ -9,8 +9,13 @@ import re
 from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
+<<<<<<< HEAD
 import nltk
 from collections import defaultdict
+=======
+# import nltk
+
+>>>>>>> b2b3d950fea89de5897fb72efb77966d482e9b43
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
@@ -19,7 +24,9 @@ class Chatbot:
       # The chatbot's default name is `moviebot`. Give your chatbot a new name.
       self.name = 'moviebot'
 
-      self.creative = True
+      self.creative = creative
+      self.mult_movies_select = False
+      self.mult_movie_options = []
 
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
@@ -134,6 +141,10 @@ class Chatbot:
     ###############################################################################
     # 2. Modules 2 and 3: extraction and transformation                           #
     ###############################################################################
+    
+    def process_helper(self, movies, sentiment):
+      #TODO: place process code that will be used in both starter and creative mode
+      return 0
 
     def process(self, line):
       """Process a line of input from the REPL and generate a response.
@@ -167,6 +178,15 @@ class Chatbot:
         sentence_sentiment = self.extract_sentiment(format(line))
 
         response = "I processed in creative mode!!".format(line)
+
+        #if multiple movies were matched based on prev line, user must clarify
+        if self.mult_movies_select is True:
+          movie_match = False
+          for i in self.mult_movie_options:
+            if line in self.titles[i][0]:
+              movie_match = True
+          if not movie_match:
+            response = "Please clarify which movie you are referring to."
 
       else:
         
@@ -247,13 +267,14 @@ class Chatbot:
       """
       titles = []
       if self.creative:
-        titles = re.findall('"(.+?)"', text)
+        titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
         tokens = text.split(' ')
+        #gets substrings of the text input and tries to find movie titles that match
+        #if match is found, the title is added to the list
         for i in range(len(tokens), 0, -1):
           for j in range(i):
             test_tokens = tokens[j:i]
             test_title = ' '.join(test_tokens)
-            #print(test_title)
             movie_search = self.find_movies_by_title(test_title)
             if len(movie_search) > 0:
               titles.append(test_title)
@@ -281,46 +302,23 @@ class Chatbot:
       :returns: a list of indices of matching movies
       """
       title = title.lower()
-      #print('below is the title')
-      #print(title)
-      #print('above is the title')
       indices = []
+
       title_split = title.split(' ')
-
-      #for titles like Titanic (1995)
-      if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
-        
-        #print(title_split[len(title_split) - 1])
-        if title_split[0] in self.articles:
-          title = ''
-          for i in range(1, len(title_split) - 1):
-            title += title_split[i]
-            if i < len(title_split) - 2: title += ' '
-          title +=', ' + title_split[0]
-          title += ' ' + title_split[len(title_split) - 1]
-        for i in range(len(self.titles)):
-          curr_title = self.titles[i][0].lower()
-          if title == curr_title:
-            indices.append(i)
-      else:
-        #for titles like "the notebook"
-        if title_split[0] in self.articles:
-          title = ''
-          for i in range(1, len(title_split)):
-            title += title_split[i]
-            if i < len(title_split) - 1: title += ' '
-          title += ', ' + title_split[0]
-
-        for i in range(len(self.titles)):
-          curr_title = self.titles[i][0].lower()
-          movie_name = curr_title.split(' (')
-          if title == movie_name[0]:
-            indices.append(i)
-
       if(self.creative):
-        
+
+        #disambiguate part 1
         for i in range(len(self.titles)):
           curr_title = self.titles[i][0].lower()
+          
+          stripped_title = curr_title.replace(r':', '') #replace all extraneous punctuation in the title
+          if title in stripped_title: #if our title is a substring in the stripped title, check if all tokens exist
+            tokens = stripped_title.split(' ')
+            for t in range(len(tokens) - len(title_split) + 1):
+              if tokens[t:t+len(title_split)] == title_split: #if tokens exist, append the index
+                indices.append(i)
+                break
+
           alternate_titles = curr_title.split(' (') #list of all alternate titles
           #print(alternate_titles)
           # if(len(alternate_titles)) == 2: #if it only has 1 title
@@ -349,16 +347,40 @@ class Chatbot:
                 #print(extracted_title)
                 indices.append(i)
 
-              title_split = extracted_title.split(', ') #for alternate titles that have 'terminal, the' format
-              if(len(title_split) > 1):
-                if (title_split[1] in self.articles):
+              extracted_title_split = extracted_title.split(', ') #for alternate titles that have 'terminal, the' format
+              if(len(extracted_title_split) > 1):
+                if (extracted_title_split[1] in self.articles):
                   #print(title_split[1])
-                  extracted_title = title_split[1] + ' ' + title_split[0] #eg 'the hunt'
+                  extracted_title = extracted_title_split[1] + ' ' + extracted_title_split[0] #eg 'the hunt'
                   if (extracted_title == title):
                     #print(extracted_title)
                     indices.append(i)
-
-
+      
+      else: #if not in creative mode
+        if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]): #if user included a date
+          if title_split[0] in self.articles:
+            title = ''
+            for i in range(1, len(title_split) - 1):
+              title += title_split[i]
+              if i < len(title_split) - 2: title += ' '
+            title +=', ' + title_split[0]
+            title += ' ' + title_split[len(title_split) - 1]
+          for i in range(len(self.titles)):
+            curr_title = self.titles[i][0].lower()
+            if title == curr_title:
+              indices.append(i)
+        else: #if not user did not include date
+          if title_split[0] in self.articles:
+            title = ''
+            for i in range(1, len(title_split)):
+              title += title_split[i]
+              if i < len(title_split) - 1: title += ' '
+            title += ', ' + title_split[0]
+          for i in range(len(self.titles)):
+            curr_title = self.titles[i][0].lower()
+            movie_name = curr_title.split(' (')
+            if title == movie_name[0]:
+              indices.append(i)
       return indices
 
 
@@ -680,6 +702,7 @@ if __name__ == '__main__':
   print('    python3 repl.py')
 
 # # Test zone
+
 chatbot = Chatbot()
 titles = chatbot.extract_titles('I liked The Notebook!')
 print(titles)
@@ -688,4 +711,6 @@ print(titles)
 
 #print('indeces:')
 #print(indices)
+
+
 
