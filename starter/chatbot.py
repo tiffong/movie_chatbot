@@ -332,8 +332,7 @@ class Chatbot:
       titles = []
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
-        text = re.sub(r'[?.!:]', '', text)
-        # print(text)
+        text = re.sub(r'[^\w\s]', '', text)
         tokens = text.split(' ')
         # gets substrings of the text input and tries to find movie titles that match
         # if match is found, the title is added to the list
@@ -345,7 +344,7 @@ class Chatbot:
             if len(movie_search) > 0:
               titles.append(test_title)
               return list(set(titles))
-          #print(titles)
+
 
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
@@ -635,30 +634,37 @@ class Chatbot:
       scores = dict()
       title = title.lower() #title user typed in
 
-      minimum = max_distance
+      minimum = max_distance #min starts at 3
       for i in range(len(self.titles)):
           database_title = self.titles[i][0].lower().split(' (')[0] #title from database
           #print(database_title)
-
           distance = nltk.edit_distance(title, database_title)
           #distance = nltk.edit_distance(title, "batman")
-          #print(distance)
 
           if distance <= minimum:
-            minimum = distance
-            indices = self.find_movies_by_title(database_title)
+            #print('I AM AERE')
+            minimum = distance #new minimum is set
+
+            #indices = self.find_movies_by_title(database_title)
 
             if distance not in scores:
               scores[distance] = []
-              for index in indices:
-                scores[distance].append(index)
+              #for index in indices:
+              scores[distance].append(i)
             else:
-              for index in indices:
-                if index not in scores[distance]:
-                  scores[distance].append(index)
+              #for index in indices:
+              if i not in scores[distance]:
+                  scores[distance].append(i)
 
-      if minimum in scores:
-        return scores[minimum]
+
+      localmin = minimum
+      for key in scores:
+        if(key <= localmin):
+          localmin = key
+
+      #print(scores)
+      if localmin in scores:
+        return scores[localmin]
       else:
         return []
 
@@ -688,7 +694,7 @@ class Chatbot:
 
       clarification_name = re.sub(r'[0-9]{4}', '', clarification)
       clarification_year = re.findall('([0-9]{4})', clarification)
-     
+
       stripped_clarification_name = re.sub(r'[^\w\s]', '', clarification_name)
       indices = []
       for c in candidates:
@@ -698,13 +704,13 @@ class Chatbot:
 
         stripped_movie_name = re.sub(r'[^\w\s]', '', movie_name)
         plausible = False
-    
+
         for y in clarification_year:
-          if y in movie_year: 
+          if y in movie_year:
             plausible = True
         if len(stripped_clarification_name) != 0 and stripped_clarification_name in stripped_movie_name:
           plausible = True
-        
+
         if plausible is True: indices.append(c)
       return indices
 
@@ -906,12 +912,10 @@ if __name__ == '__main__':
 
 # # Test zone
 
-chatbot = Chatbot(False)
-# titles = chatbot.extract_titles('I liked The Notebook!')
-# print(titles)
+chatbot = Chatbot(True)
+titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"!')
+print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
 
-print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
-
-
+print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3))
