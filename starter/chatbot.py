@@ -647,30 +647,37 @@ class Chatbot:
       scores = dict()
       title = title.lower() #title user typed in
 
-      minimum = max_distance
+      minimum = max_distance #min starts at 3
       for i in range(len(self.titles)):
           database_title = self.titles[i][0].lower().split(' (')[0] #title from database
           #print(database_title)
-
           distance = nltk.edit_distance(title, database_title)
           #distance = nltk.edit_distance(title, "batman")
-          #print(distance)
-
+          
           if distance <= minimum:
-            minimum = distance
-            indices = self.find_movies_by_title(database_title)
+            #print('I AM AERE')
+            minimum = distance #new minimum is set
+
+            #indices = self.find_movies_by_title(database_title)
 
             if distance not in scores:
               scores[distance] = []
-              for index in indices:
-                scores[distance].append(index)
+              #for index in indices:
+              scores[distance].append(i)
             else:
-              for index in indices:
-                if index not in scores[distance]:
-                  scores[distance].append(index)
+              #for index in indices:
+              if i not in scores[distance]:
+                  scores[distance].append(i)
 
-      if minimum in scores:
-        return scores[minimum]
+
+      localmin = minimum
+      for key in scores:
+        if(key <= localmin):
+          localmin = key
+
+      #print(scores)
+      if localmin in scores:
+        return scores[localmin]
       else:
         return []
 
@@ -923,7 +930,6 @@ chatbot = Chatbot(True)
 # print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
-
 print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
 
 
