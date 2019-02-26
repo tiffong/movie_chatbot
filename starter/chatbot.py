@@ -9,6 +9,7 @@ import re
 from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
+import nltk
 
 
 class Chatbot:
@@ -19,6 +20,8 @@ class Chatbot:
       self.name = 'moviebot'
 
       self.creative = creative
+      self.mult_movies_select = False
+      self.mult_movie_options = []
 
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
@@ -28,12 +31,13 @@ class Chatbot:
 
       sentiment = movielens.sentiment()
       self.porterStemmer = PorterStemmer()
+      # self.sentiment = sentiment
       self.sentiment = {}
       for word in sentiment:
           self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
 
       self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
-                             'couldnt','wont',  'cant','dont','didnt','nor','ni','werent']
+                             'couldnt','wont',  'cant','dont','didnt','nor','ni','werent', 'never','none','nobody','nothing','scarcely']
       self.intensifiers = ['amazingly', 'astoundingly', 'bloody', 'dreadfully', 'colossally', 'especially',
                            'exceptionally','excessively', 'extremely', 'extraordinarily', 'fantastically', 'frightfully', 'incredibly',
                            'insanely', 'outrageously', 'phenomenally', 'quite', 'radically', 'rather', 'real', 'really',
@@ -72,11 +76,22 @@ class Chatbot:
                                         "Can you describe to me another of your movie reactions?"]
       self.announcing_recommendation_responses = ["I have enough information to give you a recommendation.",
                                                   "That's enough movies for me to recommend to you a new one.",
-                                                  "I can now recommend a new movie for you."]
+                                                  "I can now recommend a new movie for you.",
+                                                  "Based on your preferences, I can give you a recommendation."]
+      self.announcing_recommendation_responses_multiple = ["I have enough information to give you some recommendations.",
+                                                  "That's enough movies for me to recommend to you new ones.",
+                                                  "I can now recommend new movies for you.",
+                                                  "Based on your preferences, I can give you some recommendations!"]
+
       self.recommendation_templates = ["I recommend that you watch \"{}\".",
                                        "I suggest that you check out the film \"{}\".",
                                        "I believe that you would enjoy \"{}\".",
                                        "\"{}\" would be a good film for you to watch."]
+      self.recommendation_multiple_movies = ["I recommend that you watch these movies: {}",
+                                       "I suggest that you check out these films: {}",
+                                       "I believe that you would enjoy these films: {}",
+                                       "Here are some good films for you to watch: {}"] 
+
 
       self.user_sentiment = np.zeros(len(self.titles))
 
@@ -118,6 +133,10 @@ class Chatbot:
     ###############################################################################
     # 2. Modules 2 and 3: extraction and transformation                           #
     ###############################################################################
+    
+    def process_helper(self, movies, sentiment):
+      #TODO: place process code that will be used in both starter and creative mode
+      return 0
 
     def process(self, line):
       """Process a line of input from the REPL and generate a response.
@@ -150,9 +169,16 @@ class Chatbot:
         movies = self.extract_titles(format(line))
         sentence_sentiment = self.extract_sentiment(format(line))
 
-        response = "I processed {} in creative mode!!".format(line)
-        
+        response = "I processed in creative mode!!".format(line)
 
+        #if multiple movies were matched based on prev line, user must clarify
+        if self.mult_movies_select is True:
+          movie_match = False
+          for i in self.mult_movie_options:
+            if line in self.titles[i][0]:
+              movie_match = True
+          if not movie_match:
+            response = "Please clarify which movie you are referring to."
 
       else:
         
@@ -165,11 +191,12 @@ class Chatbot:
           response = "Please tell me about one movie at a time. Go ahead."
         elif len(movies) == 1:
           movie_indices = self.find_movies_by_title(movies[0])
-          if len(movie_indices) == 0:
+          
+          if len(movie_indices) == 0: #did not give valid movie
             response = '"' + movies[0] + '" is not a valid movie. Please tell me about a movie that exists.'
-          elif sentence_sentiment == 0:
+          elif sentence_sentiment == 0: #gave a neutral response
             response = random.choice(self.neutral_responses) + ' Please give me information about a movie.'
-          else:
+          else: #user gave valid movie and non-neutral response
             if sentence_sentiment == -1:
               self.user_sentiment[movie_indices[0]] = -1
               response = random.choice(self.negative_responses)
@@ -178,16 +205,31 @@ class Chatbot:
               self.user_sentiment[movie_indices[0]] = 1
               response = random.choice(self.positive_responses)
               response = response.replace('{}', movies[0])
+            
             if np.count_nonzero(self.user_sentiment) < 5:
               response += '\n' + random.choice(self.asking_for_more_responses)
-            else:
-              recommendation = self.recommend(self.user_sentiment, self.ratings, k=1, creative=False)  # TODO : recommend a movie
+            else: #user has given 5 movies
+              recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=False)  
               recommended_movie_index = recommendation[0]
-              movie_title = self.titles[recommended_movie_index][0]
-              movie_title = movie_title.split(' (')[0]
-              response = random.choice(self.announcing_recommendation_responses)
-              response += '\n' + random.choice(self.recommendation_templates).replace('{}', movie_title)
-              response += '\n' + "Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)"
+              recommended_movies = []
+              for i in range(len(recommendation)):
+                movie_title = self.titles[recommendation[i]][0]
+                movie_title = movie_title.split(' (')[0]
+                recommended_movies.append(movie_title)
+              #num = random.randint(0,6)
+              num = 5
+
+              if (num < 3): #give one movie recommendation
+                response = random.choice(self.announcing_recommendation_responses) 
+                response += '\n' + random.choice(self.recommendation_templates).replace('{}', recommended_movies[0])
+                response += '\n' + "Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)"
+              else: #give three movie recommendations
+                movies_list = '\"' + recommended_movies[0] + ',\" \"' + recommended_movies[1] + ',\" and \"' + recommended_movies[2] + '.\"'
+                response = random.choice(self.announcing_recommendation_responses_multiple)
+                response += '\n' + random.choice(self.recommendation_multiple_movies).replace('{}', movies_list)
+                response += '\n' + "Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)"
+
+
         else:
             response = random.choice(self.neutral_responses) + ' Please give me information about a movie.'
 
@@ -219,6 +261,8 @@ class Chatbot:
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
         tokens = text.split(' ')
+        #gets substrings of the text input and tries to find movie titles that match
+        #if match is found, the title is added to the list
         for i in range(len(tokens), 0, -1):
           for j in range(i):
             test_tokens = tokens[j:i]
@@ -248,11 +292,45 @@ class Chatbot:
       :returns: a list of indices of matching movies
       """
       title = title.lower()
+      #print(title)
       indices = []
+<<<<<<< HEAD
       if self.creative:
+=======
+
+
+
+      #print(self.titles[45])
+
+
+
+      title_split = title.split(' ')
+      if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
+        
+        #print(title_split[len(title_split) - 1])
+        if title_split[0] in self.articles:
+          title = ''
+          for i in range(1, len(title_split) - 1):
+            title += title_split[i]
+            if i < len(title_split) - 2: title += ' '
+          title +=', ' + title_split[0]
+          title += ' ' + title_split[len(title_split) - 1]
+        for i in range(len(self.titles)):
+          curr_title = self.titles[i][0].lower()
+          if title == curr_title:
+            indices.append(i)
+      else: 
+        if title_split[0] in self.articles:
+          title = ''
+          for i in range(1, len(title_split)):
+            title += title_split[i]
+            if i < len(title_split) - 1: title += ' '
+          title += ', ' + title_split[0]
+>>>>>>> c5509bd1df89bfb72b6582627ee5d96519e4a440
         for i in range(len(self.titles)):
           title_tokens = title.split(' ')
           curr_title = self.titles[i][0].lower()
+<<<<<<< HEAD
           curr_title = curr_title.replace(r':', '')
           tokens = curr_title.split(' ')
           for t in range(len(tokens) - len(title_tokens) + 1):
@@ -285,7 +363,27 @@ class Chatbot:
             movie_name = curr_title.split(' (')
             if title == movie_name[0]:
               indices.append(i)
+=======
+          
+            #TODO: GET ALTERNATE TITLES
+          if (self.creative):
+            x = curr_title.split(' (') #all of the titles split up
+            for alternate_title in range(len(x) - 1): #iterate through titles
+              match = re.search(r'(.*)\)', x[alternate_title], re.IGNORECASE) #match regex
+              if (match):             
+                #if (x[alternate_title] == match.group(1)):
+                print(match.group())
+
+          movie_name = curr_title.split(' (')
+          #print(movie_name)
+          if title == movie_name[0]:
+            indices.append(i)
+>>>>>>> c5509bd1df89bfb72b6582627ee5d96519e4a440
       return indices
+
+
+        
+
 
 
     def extract_sentiment(self, text):
@@ -305,6 +403,9 @@ class Chatbot:
       :param text: a user-supplied line of text
       :returns: a numerical value for the sentiment of the text
       """
+
+      text = re.sub("([\"]).*?([\"])", "\g<1>\g<2>", text)
+      text = text.replace("\"", "").strip()
 
       text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
       text = text.lower()  # lowercase
@@ -328,7 +429,7 @@ class Chatbot:
                       score += 1
                   else:
                       score -= 1
-              negate = False
+              # negate = False
       if score > 0:
           return 1
       elif score < 0:
