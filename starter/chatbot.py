@@ -10,7 +10,7 @@ from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
 from collections import defaultdict
-# import nltk
+import nltk
 
 
 class Chatbot:
@@ -313,7 +313,7 @@ class Chatbot:
           curr_title = self.titles[i][0].lower()
           
 
-          stripped_title = curr_title.replace(r':', '') #replace all extraneous punctuation in the title
+          stripped_title = re.sub(r'[?.!:]', '', curr_title) #replace all extraneous punctuation in the title
           if title in curr_title: #if our title is a substring in the stripped title, check if all tokens exist
             tokens = stripped_title.split(' ')
             for t in range(len(tokens) - len(stripped_title_split) + 1):
