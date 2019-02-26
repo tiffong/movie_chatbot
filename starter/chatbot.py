@@ -263,6 +263,8 @@ class Chatbot:
       titles = []
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
+        text = re.sub(r'[?.!:]', '', text)
+        print(text)
         tokens = text.split(' ')
         #gets substrings of the text input and tries to find movie titles that match
         #if match is found, the title is added to the list
@@ -689,8 +691,8 @@ if __name__ == '__main__':
 
 # # Test zone
 chatbot = Chatbot(True)
-#titles = chatbot.extract_titles('I liked The Notebook!')
-#print(titles)
+titles = chatbot.extract_titles('I liked The Notebook!')
+print(titles)
 input1 = 'the rage: carrie 2'
 indices = chatbot.find_movies_by_title(input1)
 
