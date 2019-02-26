@@ -11,7 +11,7 @@ from heapq import nlargest
 import random
 import csv
 from collections import defaultdict
-# import nltk
+import nltk
 
 
 class Chatbot:
@@ -40,7 +40,7 @@ class Chatbot:
       self.sentiment = {}
       for word in sentiment:
           self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
-      with open('deps/polarity_scores.txt', 'r') as f:
+      with open('deps/polarity_scores.txt', 'r') as f:   #TODO: stem this data beforehand
         reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
         next(reader)
         creative_sentiment = dict(reader)
@@ -57,6 +57,9 @@ class Chatbot:
                            'remarkably', 'ridiculously', 'so', 'soo', 'sooo', 'soooo', 'strikingly', 'super',
                            'supremely', 'terribly', 'terrifically', 'too', 'totally', 'unusually', 'very', 'wicked']
       self.end_intensifiers = ['a lot', 'a bunch', 'a great deal', 'a whole lot']
+      self.clause_negation = r'but not|and not|although not|though not|even though not|even if not'
+      self.INFLECT = '__inflect__'
+      self.sentence_inflection_splitters = r'but|although|because|since|though|even though|even if'
 
       #############################################################################
       # TODO: Binarize the movie ratings matrix.                                  #
@@ -275,7 +278,7 @@ class Chatbot:
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
         text = re.sub(r'[?.!:]', '', text)
-        print(text)
+        # print(text)
         tokens = text.split(' ')
         #gets substrings of the text input and tries to find movie titles that match
         #if match is found, the title is added to the list
@@ -425,7 +428,6 @@ class Chatbot:
 
         text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
         text = text.lower()  # lowercase
-        # words = text.split(' ')  # getting individual words
         words =nltk.word_tokenize(text)
         return words
 
@@ -439,9 +441,7 @@ class Chatbot:
           words[i] = word
           # examples of this case 'I like not "Avatar"'     'I like neither "Speed" nor "Speed 2"'
           if word in self.negation_words_end and i != 0 and words[i-1] in self.sentiment:
-            # print(i, word, score, words)
             score[-1] *= -1
-            # print(score)
             continue
           if word in self.negation_words:
             negate = True
@@ -449,7 +449,6 @@ class Chatbot:
             sentiment = sentiment_mapper[self.sentiment[word]]
             if negate:
               sentiment *= -1
-            # score += sentiment
             score.append(sentiment)
         if len(score) == 0: return 0
         score = np.sum(score)
@@ -525,19 +524,36 @@ class Chatbot:
         index = {}
         expression = r'(\".*?\")'
         matches = re.findall(expression, text)
-        count = 1
         for i, match in enumerate(matches):
-          id = '__' + str(i) + '__'
-          index[id] = match
+          id = ' __' + str(i) + '__ '
+          index[id.strip()] = match
           text = text.replace(match, id)
+        text = re.sub(r'[^\w\s]', '', text)
         return index, text
 
       index, text = index_movies(text)
-      tokens = text.split(' ')
-      sentiment = self.extract_sentiment(text)
+
+      # split into phrases
+      text = re.sub(self.clause_negation,self.INFLECT,text)
+      phrases = re.split(self.sentence_inflection_splitters,text)
+      #TODO: two complete thoughts with and
+      # new_phrases = []
+      # for phrase in phrases:
+      #   if 'and' in phrase:
+      #     phrase = phrase.split('and')
+      #   if 'and' in phrase and ('__' not in phrase or len(nltk.word_tokenize(phrase)) == 1):
+
+      if len(phrases) > 1 and ('__' not in phrases[1] or len(nltk.word_tokenize(phrases[1])) == 1):
+        phrases = [text]
       sentiments = []
-      for movie in index:
-          sentiments.append((index[movie],sentiment))
+      for phrase in phrases:
+        sentiment = self.extract_sentiment(phrase)
+        tokens = nltk.word_tokenize(phrase)
+        for token in tokens:
+          if token == self.INFLECT:
+            sentiment *= -1
+          if token in index:
+            sentiments.append((index[token], sentiment))
       return sentiments
 
     def find_movies_closest_to_title(self, title, max_distance=3):

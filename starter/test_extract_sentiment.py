@@ -26,3 +26,5 @@ test_and_print('I really reeally liked "Zootopia"!!!')
 
 test_and_print('I liked neither "Zootopia" nor "Frozen" !!!')
 test_and_print('I liked not "Zootopia" nor "Frozen" !!!')
+
+test_and_print('"Trolls 2" is not a good movie.') #TODO
