@@ -451,7 +451,10 @@ class Chatbot:
               indices.append(i)
       return indices
 
-
+    #TODO: write function that detects strong emotional language
+    #and returns a possible user emotion
+    def get_user_emotion(self, text):
+      pass
 
     def extract_sentiment(self, text): #TODO: combine creative and simple into cleaner version
       """Extract a sentiment rating from a line of text.
