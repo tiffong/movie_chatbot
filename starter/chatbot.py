@@ -9,6 +9,9 @@ import re
 from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
+import nltk
+from collections import defaultdict
+
 # import nltk
 
 
@@ -469,6 +472,15 @@ class Chatbot:
       :param max_distance: the maximum edit distance to search for
       :returns: a list of movie indices with titles closest to the given title and within edit distance max_distance
       """
+      # scores = defaultdict(int)
+      # title = title.lower() #title user typed in
+      # for i in range(len(self.titles)):
+      #     database_title = self.titles[i][0].lower() #title from database
+
+      #     distance = nltk.edit_distance(title, database_title)
+      #     if distance < max_distance:
+
+
 
       pass
 
@@ -691,13 +703,4 @@ if __name__ == '__main__':
 
 # # Test zone
 chatbot = Chatbot(True)
-titles = chatbot.extract_titles('I liked The Notebook!')
-print(titles)
-input1 = 'the rage: carrie 2'
-indices = chatbot.find_movies_by_title(input1)
-
-print('indeces:')
-jackson_indices = chatbot.find_movies_by_title("percy jackson")
-print(jackson_indices)
-print(indices)
 
