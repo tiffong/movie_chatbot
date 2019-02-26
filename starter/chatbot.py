@@ -11,7 +11,7 @@ from heapq import nlargest
 import random
 import csv
 from collections import defaultdict
-import nltk
+# import nltk
 
 
 class Chatbot:
@@ -344,8 +344,7 @@ class Chatbot:
       titles = []
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
-        text = re.sub(r'[?.!:]', '', text)
-        # print(text)
+        text = re.sub(r'[^\w\s]', '', text)
         tokens = text.split(' ')
         #gets substrings of the text input and tries to find movie titles that match
         #if match is found, the title is added to the list
@@ -357,7 +356,7 @@ class Chatbot:
             if len(movie_search) > 0:
               titles.append(test_title)
               return list(set(titles))
-          #print(titles)
+          
 
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
@@ -919,11 +918,11 @@ if __name__ == '__main__':
 # # Test zone
 
 chatbot = Chatbot(True)
-# titles = chatbot.extract_titles('I liked The Notebook!')
-# print(titles)
+titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"!')
+print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
 
-print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
+# print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
 
 
