@@ -10,10 +10,7 @@ from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
 import csv
-<<<<<<< HEAD
-=======
 from collections import defaultdict
->>>>>>> bc0ca004126cfc9f79ba3328f4d7809f9a9e7fca
 import nltk
 
 
@@ -32,8 +29,8 @@ class Chatbot:
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
-      self.articles = ['a', 'an', 'the', 
-      'die', 'le', 'la', 'il', 'elle', 'l', 'un', 
+      self.articles = ['a', 'an', 'the',
+      'die', 'le', 'la', 'il', 'elle', 'l', 'un',
       'los', 'les', 'das', 'i', 'lo'
       'der', 'det', 'den', 'jie' ]
 
@@ -51,10 +48,7 @@ class Chatbot:
                            'insanely', 'outrageously', 'phenomenally', 'quite', 'radically', 'rather', 'real', 'really',
                            'remarkably', 'ridiculously', 'so', 'soo', 'sooo', 'soooo', 'strikingly', 'super',
                            'supremely', 'terribly', 'terrifically', 'too', 'totally', 'unusually', 'very', 'wicked']
-<<<<<<< HEAD
-      self.end_intensifiers = {'a lot', 'a bunch', 'a great deal', 'a whole lot'}  #TODO: implement this
-=======
->>>>>>> bc0ca004126cfc9f79ba3328f4d7809f9a9e7fca
+      self.end_intensifiers = ['a lot', 'a bunch', 'a great deal', 'a whole lot']
 
       #############################################################################
       # TODO: Binarize the movie ratings matrix.                                  #
@@ -102,7 +96,7 @@ class Chatbot:
       self.recommendation_multiple_movies = ["I recommend that you watch these movies: {}",
                                        "I suggest that you check out these films: {}",
                                        "I believe that you would enjoy these films: {}",
-                                       "Here are some good films for you to watch: {}"] 
+                                       "Here are some good films for you to watch: {}"]
 
 
       self.user_sentiment = np.zeros(len(self.titles))
@@ -145,7 +139,7 @@ class Chatbot:
     ###############################################################################
     # 2. Modules 2 and 3: extraction and transformation                           #
     ###############################################################################
-    
+
     def process_helper(self, movies, sentiment):
       #TODO: place process code that will be used in both starter and creative mode
       return 0
@@ -174,7 +168,7 @@ class Chatbot:
       # possibly calling other functions. Although modular code is not graded,    #
       # it is highly recommended.                                                 #
       #############################################################################
-      
+
 
       if self.creative:
         #the movies that the user inputted
@@ -193,7 +187,7 @@ class Chatbot:
             response = "Please clarify which movie you are referring to."
 
       else:
-        
+
         #the movies that the user inputted
         movies = self.extract_titles(format(line))
 
@@ -203,7 +197,7 @@ class Chatbot:
           response = "Please tell me about one movie at a time. Go ahead."
         elif len(movies) == 1:
           movie_indices = self.find_movies_by_title(movies[0])
-          
+
           if len(movie_indices) == 0: #did not give valid movie
             response = '"' + movies[0] + '" is not a valid movie. Please tell me about a movie that exists.'
           elif sentence_sentiment == 0: #gave a neutral response
@@ -217,11 +211,11 @@ class Chatbot:
               self.user_sentiment[movie_indices[0]] = 1
               response = random.choice(self.positive_responses)
               response = response.replace('{}', movies[0])
-            
+
             if np.count_nonzero(self.user_sentiment) < 5:
               response += '\n' + random.choice(self.asking_for_more_responses)
             else: #user has given 5 movies
-              recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=False)  
+              recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=False)
               recommended_movie_index = recommendation[0]
               recommended_movies = []
               for i in range(len(recommendation)):
@@ -232,7 +226,7 @@ class Chatbot:
               #num = 5
 
               if (num < 3): #give one movie recommendation
-                response = random.choice(self.announcing_recommendation_responses) 
+                response = random.choice(self.announcing_recommendation_responses)
                 response += '\n' + random.choice(self.recommendation_templates).replace('{}', recommended_movies[0])
                 response += '\n' + "Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)"
               else: #give three movie recommendations
@@ -319,7 +313,7 @@ class Chatbot:
         #disambiguate part 1
         for i in range(len(self.titles)):
           curr_title = self.titles[i][0].lower()
-          
+
 
           stripped_title = re.sub(r'[?.!:]', '', curr_title) #replace all extraneous punctuation in the title
           if title in curr_title: #if our title is a substring in the stripped title, check if all tokens exist
@@ -351,8 +345,8 @@ class Chatbot:
               extracted_title = titles[0] # eg. 'fast and the furious 6, the)'
 
               if extracted_title.endswith(')'): #take off extra ) at end --> fast and the furious 6, the
-                extracted_title = extracted_title[:-1] 
-              
+                extracted_title = extracted_title[:-1]
+
               if (extracted_title == title and i not in indices):
                 #print(extracted_title)
                 indices.append(i)
@@ -365,7 +359,7 @@ class Chatbot:
                   if (extracted_title == title):
                     #print(extracted_title)
                     indices.append(i)
-      
+
       else: #if not in creative mode
         if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]): #if user included a date
           if title_split[0] in self.articles:
@@ -412,7 +406,6 @@ class Chatbot:
       :param text: a user-supplied line of text
       :returns: a numerical value for the sentiment of the text
       """
-<<<<<<< HEAD
       sentiment_mapper = {'pos': 2, 'neg': -2}
       def tokenize(text):
         if self.creative:
@@ -441,41 +434,10 @@ class Chatbot:
               sentiment *= -1
             score += sentiment
         if score > 0:
-=======
-
-      text = re.sub("([\"]).*?([\"])", "\g<1>\g<2>", text)
-      text = text.replace("\"", "").strip()
-
-      text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
-      text = text.lower()  # lowercase
-      words = text.split(' ') # getting individual words
-
-      score = 0
-      negate = False
-      for word in words:
-          word = self.porterStemmer.stem(word)
-          if word in self.negation_words:
-              negate = True
-          elif word in self.sentiment:
-              sentiment = self.sentiment[word]
-              if sentiment == 'pos':
-                  if negate:
-                      score -= 1
-                  else:
-                      score += 1
-              else:
-                  if negate:
-                      score += 1
-                  else:
-                      score -= 1
-              # negate = False
-      if score > 0:
->>>>>>> bc0ca004126cfc9f79ba3328f4d7809f9a9e7fca
           return 1
       elif score < 0:
           return -1
       else:
-<<<<<<< HEAD
         scores = []
         negate = False
         intense = False
@@ -503,8 +465,6 @@ class Chatbot:
             score *= 2
           scores.append(score)
         if len(scores) == 0:
-=======
->>>>>>> bc0ca004126cfc9f79ba3328f4d7809f9a9e7fca
           return 0
 
     def extract_sentiment_for_movies(self, text):
@@ -531,7 +491,7 @@ class Chatbot:
       from the provided title, and with edit distance at most max_distance.
 
       - If no movies have titles within max_distance of the provided title, return an empty list.
-      - Otherwise, if there's a movie closer in edit distance to the given title 
+      - Otherwise, if there's a movie closer in edit distance to the given title
         than all other movies, return a 1-element list containing its index.
       - If there is a tie for closest movie, return a list with the indices of all movies
         tying for minimum edit distance to the given movie.
@@ -558,7 +518,7 @@ class Chatbot:
           if distance <= minimum:
             minimum = distance
             indices = self.find_movies_by_title(database_title)
-            
+
             if distance not in scores:
               scores[distance] = []
               for index in indices:
@@ -583,9 +543,9 @@ class Chatbot:
 
     def disambiguate(self, clarification, candidates):
       """Creative Feature: Given a list of movies that the user could be talking about
-      (represented as indices), and a string given by the user as clarification 
-      (eg. in response to your bot saying "Which movie did you mean: Titanic (1953) 
-      or Titanic (1997)?"), use the clarification to narrow down the list and return 
+      (represented as indices), and a string given by the user as clarification
+      (eg. in response to your bot saying "Which movie did you mean: Titanic (1953)
+      or Titanic (1997)?"), use the clarification to narrow down the list and return
       a smaller list of candidates (hopefully just 1!)
 
       - If the clarification uniquely identifies one of the movies, this should return a 1-element
@@ -595,7 +555,7 @@ class Chatbot:
 
       Example:
         chatbot.disambiguate("1997", [1359, 2716]) should return [1359]
-      
+
       :param clarification: user input intended to disambiguate between the given movies
       :param candidates: a list of movie indices
       :returns: a list of indices corresponding to the movies identified by the clarification
@@ -631,15 +591,15 @@ class Chatbot:
 
       # for i in range(len(ratings)): #row
       #   for j in range(len(ratings[0])): #column
-          
+
       #     value = 0
       #     rating = ratings[i][j]
-          
+
       #     if(rating == 0):
       #       value = 0
       #     elif (rating > threshold):
       #       value = 1
-      #     elif(rating <= threshold):  
+      #     elif(rating <= threshold):
       #       value = -1
 
       #     binarized_ratings[i][j] = value
@@ -652,7 +612,7 @@ class Chatbot:
       binarized_ratings = np.where(binarized_ratings == 5, 1, binarized_ratings)
       binarized_ratings = np.where(binarized_ratings == 0, -1, binarized_ratings)
       binarized_ratings = np.where(binarized_ratings == 3, 0, binarized_ratings)
-      
+
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -712,7 +672,7 @@ class Chatbot:
       #######################################################################################
 
       # Populate this list with k movie indices to recommend to the user.
-      
+
       #for each movie i in the dataset
       num_movies = np.size(ratings_matrix,0)
       #print(num_movies)
@@ -733,7 +693,7 @@ class Chatbot:
 
       #for each movie in the dataset
       for i in range(num_movies):
-        movie_i = ratings_matrix[i] #ratings of all users for this movie 
+        movie_i = ratings_matrix[i] #ratings of all users for this movie
         #print(movie_i)
 
         #for each rating the user gave
@@ -808,6 +768,4 @@ chatbot = Chatbot()
 indices = chatbot.find_movies_by_title('the terminal')
 
 #print('testing for movies closest to:')
-#print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
-
-
+#print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3))
