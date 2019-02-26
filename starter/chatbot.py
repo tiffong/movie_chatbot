@@ -383,7 +383,7 @@ class Chatbot:
       indices = []
 
       title_split = title.split(' ')
-      movie_stripped_title = re.sub(r'[?.!:]', '', title)
+      movie_stripped_title = re.sub(r'[^\w\s]', '', title)
       stripped_title_split = movie_stripped_title.split(" ")
 
       if(self.creative):
@@ -393,7 +393,7 @@ class Chatbot:
           curr_title = self.titles[i][0].lower()
 
 
-          stripped_title = re.sub(r'[?.!:]', '', curr_title) #replace all extraneous punctuation in the title
+          stripped_title = re.sub(r'[^\w\s]', '', curr_title) #replace all extraneous punctuation in the title
           if title in curr_title: #if our title is a substring in the stripped title, check if all tokens exist
             tokens = stripped_title.split(' ')
             for t in range(len(tokens) - len(stripped_title_split) + 1):
@@ -698,14 +698,14 @@ class Chatbot:
       clarification_name = re.sub(r'[0-9]{4}', '', clarification)
       clarification_year = re.findall('([0-9]{4})', clarification)
      
-      stripped_clarification_name = re.sub(r'[:\(\).?,!]', '', clarification_name)
+      stripped_clarification_name = re.sub(r'[^\w\s]', '', clarification_name)
       indices = []
       for c in candidates:
         title = self.titles[c][0].lower()
         movie_name = re.sub(r' \([0-9]{4}\)', '', title)
         movie_year = re.findall('\(([0-9]{4})\)', title)
 
-        stripped_movie_name = re.sub(r'[:\(\).?,!]', '', movie_name)
+        stripped_movie_name = re.sub(r'[^\w\s]', '', movie_name)
         plausible = False
     
         for y in clarification_year:
