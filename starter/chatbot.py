@@ -19,13 +19,16 @@ class Chatbot:
       # The chatbot's default name is `moviebot`. Give your chatbot a new name.
       self.name = 'moviebot'
 
-      self.creative = creative
+      self.creative = True
 
       # This matrix has the following shape: num_movies x num_users
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
-      self.articles = ['a', 'an', 'the']
+      self.articles = ['a', 'an', 'the', 
+      'die', 'le', 'la', 'il', 'elle', 'l', 'un', 
+      'los', 'les', 'das', 'i', 'lo'
+      'der', 'det', 'den', 'jie' ]
 
       sentiment = movielens.sentiment()
       self.porterStemmer = PorterStemmer()
@@ -33,7 +36,7 @@ class Chatbot:
       self.sentiment = {}
       for word in sentiment:
           self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
-
+      self.settt = set()
       self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
                              'couldnt','wont',  'cant','dont','didnt','nor','ni','werent', 'never','none','nobody','nothing','scarcely']
       self.intensifiers = ['amazingly', 'astoundingly', 'bloody', 'dreadfully', 'colossally', 'especially',
@@ -201,8 +204,8 @@ class Chatbot:
                 movie_title = self.titles[recommendation[i]][0]
                 movie_title = movie_title.split(' (')[0]
                 recommended_movies.append(movie_title)
-              #num = random.randint(0,6)
-              num = 5
+              num = random.randint(0,6)
+              #num = 5
 
               if (num < 3): #give one movie recommendation
                 response = random.choice(self.announcing_recommendation_responses) 
@@ -255,6 +258,8 @@ class Chatbot:
             if len(movie_search) > 0:
               titles.append(test_title)
               return list(set(titles))
+          #print(titles)
+
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
       return titles
@@ -276,53 +281,82 @@ class Chatbot:
       :returns: a list of indices of matching movies
       """
       title = title.lower()
+      #print('below is the title')
       #print(title)
+      #print('above is the title')
       indices = []
-
-
-
-      #print(self.titles[45])
-
-
-
       title_split = title.split(' ')
-      if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
-        
-        #print(title_split[len(title_split) - 1])
-        if title_split[0] in self.articles:
-          title = ''
-          for i in range(1, len(title_split) - 1):
-            title += title_split[i]
-            if i < len(title_split) - 2: title += ' '
-          title +=', ' + title_split[0]
-          title += ' ' + title_split[len(title_split) - 1]
-        for i in range(len(self.titles)):
-          curr_title = self.titles[i][0].lower()
-          if title == curr_title:
-            indices.append(i)
-      else: 
-        if title_split[0] in self.articles:
-          title = ''
-          for i in range(1, len(title_split)):
-            title += title_split[i]
-            if i < len(title_split) - 1: title += ' '
-          title += ', ' + title_split[0]
-        for i in range(len(self.titles)):
-          curr_title = self.titles[i][0].lower()
-          
-            #TODO: GET ALTERNATE TITLES
-          if (self.creative):
-            x = curr_title.split(' (') #all of the titles split up
-            for alternate_title in range(len(x) - 1): #iterate through titles
-              match = re.search(r'(.*)\)', x[alternate_title], re.IGNORECASE) #match regex
-              if (match):             
-                #if (x[alternate_title] == match.group(1)):
-                print(match.group())
 
-          movie_name = curr_title.split(' (')
+      if(self.creative):
+        #print('creative mode')
+        #print(title)
+        #print('creaive 2')
+        
+        for i in range(len(self.titles)):
+          curr_title = self.titles[i][0].lower()
+          alternate_titles = curr_title.split(' (') #all of the titles split up
+          
+          if(len(alternate_titles)) == 2: #if it only has 1 title
+            if title == alternate_titles[0]:
+              indices.append(i)
+          else: #if there are more than 1 title, return indices still
+            for j in range(len(alternate_titles) - 1): #iterate through diff titles
+              titles = re.findall(r'(?:a.k.a.\ )*([A-Za-z0-9 ()?!.\',:-]*)[\)]*', alternate_titles[j])
+              #titles: ['hundra', '', 'ringen som klev ut genom f', '', 'nstret och f', '', 'rsvann', '']
+              #titles: ['the unexpected virtue of ignorance', '']
+              for x in range(len(titles)-1): 
+                if len(titles) > 3: #foreign accents should not be accounted for
+                  continue
+                else: #these are alternate movies without foreign accents
+                  extracted_title = titles[0] # eg. 'the unexpected virtue of ignorance'
+                  if extracted_title.endswith(')'): #take off extra ) at end
+                    extracted_title = extracted_title[:-1]
+                  
+                  title_split = extracted_title.split(', ')
+                  if(len(title_split) > 1):
+                    if (title_split[1] in self.articles):
+                      #print(title_split[1])
+                      extracted_title = title_split[1] + ' ' + title_split[0] #eg 'the hunt'
+                      if (extracted_title == title):
+                        indices.append(i)
+                      
+
+      else:
+        #print(title_split)
+        if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
+          
+          #print(title_split[len(title_split) - 1])
+          if title_split[0] in self.articles:
+            title = ''
+            for i in range(1, len(title_split) - 1):
+              title += title_split[i]
+              if i < len(title_split) - 2: title += ' '
+            title +=', ' + title_split[0]
+            title += ' ' + title_split[len(title_split) - 1]
+          for i in range(len(self.titles)):
+            curr_title = self.titles[i][0].lower()
+            if title == curr_title:
+              indices.append(i)
+        else:
+
+          if title_split[0] in self.articles:
+            title = ''
+            for i in range(1, len(title_split)):
+              title += title_split[i]
+              if i < len(title_split) - 1: title += ' '
+            title += ', ' + title_split[0]
+
+          for i in range(len(self.titles)):
+            curr_title = self.titles[i][0].lower()
+
+            #GET ALTERNATE TITLES IN CREATIVE MODE
+            
+            movie_name = curr_title.split(' (')
           #print(movie_name)
-          if title == movie_name[0]:
-            indices.append(i)
+            if title == movie_name[0]:
+              indices.append(i)
+
+   
       return indices
 
 
@@ -639,8 +673,10 @@ if __name__ == '__main__':
 
 # # Test zone
 chatbot = Chatbot()
-titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"')
-
-# indices = chatbot.find_movies_by_title(titles[0])
-# print(indices)
-# print(chatbot.titles[indices[0]])
+#titles = chatbot.extract_titles('I liked "the string"')
+#print(titles[0])
+indices = chatbot.find_movies_by_title('the string')
+#print(titles)
+print('indeces:')
+print(indices)
+#print(chatbot.titles[indices[0]])
