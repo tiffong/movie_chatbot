@@ -217,7 +217,7 @@ class Chatbot:
       """
       titles = []
       if self.creative:
-        titles = re.findall('"(.+?)"', text)
+        titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
         tokens = text.split(' ')
         for i in range(len(tokens), 0, -1):
           for j in range(i):
@@ -229,7 +229,6 @@ class Chatbot:
               return list(set(titles))
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
-      print(titles)
       return titles
 
     def find_movies_by_title(self, title):
@@ -250,32 +249,42 @@ class Chatbot:
       """
       title = title.lower()
       indices = []
-
-      title_split = title.split(' ')
-      if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
-        if title_split[0] in self.articles:
-          title = ''
-          for i in range(1, len(title_split) - 1):
-            title += title_split[i]
-            if i < len(title_split) - 2: title += ' '
-          title +=', ' + title_split[0]
-          title += ' ' + title_split[len(title_split) - 1]
+      if self.creative:
         for i in range(len(self.titles)):
+          title_tokens = title.split(' ')
           curr_title = self.titles[i][0].lower()
-          if title == curr_title:
-            indices.append(i)
-      else: 
-        if title_split[0] in self.articles:
-          title = ''
-          for i in range(1, len(title_split)):
-            title += title_split[i]
-            if i < len(title_split) - 1: title += ' '
-          title += ', ' + title_split[0]
-        for i in range(len(self.titles)):
-          curr_title = self.titles[i][0].lower()
-          movie_name = curr_title.split(' (')
-          if title == movie_name[0]:
-            indices.append(i)
+          curr_title = curr_title.replace(r':', '')
+          tokens = curr_title.split(' ')
+          for t in range(len(tokens) - len(title_tokens) + 1):
+            if tokens[t:t+len(title_tokens)] == title_tokens: 
+              indices.append(i)
+              break
+      else:
+        title_split = title.split(' ')
+        if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]):
+          if title_split[0] in self.articles:
+            title = ''
+            for i in range(1, len(title_split) - 1):
+              title += title_split[i]
+              if i < len(title_split) - 2: title += ' '
+            title +=', ' + title_split[0]
+            title += ' ' + title_split[len(title_split) - 1]
+          for i in range(len(self.titles)):
+            curr_title = self.titles[i][0].lower()
+            if title == curr_title:
+              indices.append(i)
+        else: 
+          if title_split[0] in self.articles:
+            title = ''
+            for i in range(1, len(title_split)):
+              title += title_split[i]
+              if i < len(title_split) - 1: title += ' '
+            title += ', ' + title_split[0]
+          for i in range(len(self.titles)):
+            curr_title = self.titles[i][0].lower()
+            movie_name = curr_title.split(' (')
+            if title == movie_name[0]:
+              indices.append(i)
       return indices
 
 
@@ -584,9 +593,11 @@ if __name__ == '__main__':
   print('    python3 repl.py')
 
 # # Test zone
-chatbot = Chatbot()
-titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"')
+chatbot = Chatbot(True)
+# titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"')
 
-# indices = chatbot.find_movies_by_title(titles[0])
-# print(indices)
+indices = chatbot.find_movies_by_title("percy jackson")
+for i in indices:
+  print(chatbot.titles[i])
+print(indices)
 # print(chatbot.titles[indices[0]])
