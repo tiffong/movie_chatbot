@@ -11,7 +11,7 @@ from heapq import nlargest
 import random
 import csv
 from collections import defaultdict
-# import nltk
+import nltk
 
 
 class Chatbot:
