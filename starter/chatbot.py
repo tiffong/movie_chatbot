@@ -316,7 +316,7 @@ class Chatbot:
       indices = []
 
       title_split = title.split(' ')
-      movie_stripped_title = re.sub(r'[?.!:]', '', title)
+      movie_stripped_title = re.sub(r'[^\w\s]', '', title)
       stripped_title_split = movie_stripped_title.split(" ")
 
       if(self.creative):
@@ -326,7 +326,7 @@ class Chatbot:
           curr_title = self.titles[i][0].lower()
 
 
-          stripped_title = re.sub(r'[?.!:]', '', curr_title) #replace all extraneous punctuation in the title
+          stripped_title = re.sub(r'[^\w\s]', '', curr_title) #replace all extraneous punctuation in the title
           if title in curr_title: #if our title is a substring in the stripped title, check if all tokens exist
             tokens = stripped_title.split(' ')
             for t in range(len(tokens) - len(stripped_title_split) + 1):
