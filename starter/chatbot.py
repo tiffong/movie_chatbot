@@ -288,9 +288,6 @@ class Chatbot:
       title_split = title.split(' ')
 
       if(self.creative):
-        #print('creative mode')
-        #print(title)
-        #print('creaive 2')
         
         for i in range(len(self.titles)):
           curr_title = self.titles[i][0].lower()
@@ -309,9 +306,13 @@ class Chatbot:
                   continue
                 else: #these are alternate movies without foreign accents
                   extracted_title = titles[0] # eg. 'the unexpected virtue of ignorance'
+
                   if extracted_title.endswith(')'): #take off extra ) at end
                     extracted_title = extracted_title[:-1]
                   
+                  if extracted_title == title:
+                    indices.append(i)
+
                   title_split = extracted_title.split(', ')
                   if(len(title_split) > 1):
                     if (title_split[1] in self.articles):
@@ -675,7 +676,7 @@ if __name__ == '__main__':
 chatbot = Chatbot()
 #titles = chatbot.extract_titles('I liked "the string"')
 #print(titles[0])
-indices = chatbot.find_movies_by_title('the string')
+indices = chatbot.find_movies_by_title('Se7en')
 #print(titles)
 print('indeces:')
 print(indices)
