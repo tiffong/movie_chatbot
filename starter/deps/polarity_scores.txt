@@ -54,7 +54,7 @@ alleviate,1
 allure,1
 almighty,1
 altruistic,2
-amazing,1
+amazing,2
 ameliorate,1
 amenable,2
 amenity,2
@@ -401,7 +401,7 @@ glossy,2
 glow,1
 godlike,1
 godliness,1
-good,2
+good,1
 goodness,2
 gorgeous,2
 graceful,1
@@ -612,7 +612,7 @@ pious,2
 plain,2
 plausibility,1
 playful,1
-pleasant,2
+pleasant,1
 pleasantry,2
 please,2
 pleased,2
@@ -1044,7 +1044,7 @@ chafe,-1
 chaos,-1
 chaotic,-1
 chastise,-2
-cheap,-1
+cheap,-2
 cheapen,-1
 chide,-2
 childish,-1
@@ -1398,7 +1398,7 @@ impair,-1
 impasse,-1
 impatience,-2
 impatient,-1
-imperfect,-2
+imperfect,-1
 impersonal,-2
 impetuous,-2
 imprecision,-1
@@ -1960,3 +1960,9 @@ wrong,-2
 wrongful,-2
 yawn,-1
 yelp,-1
+great,2
+superb,2
+meh,0
+garbage,-2
+trash,-2
+cheesy, -1
