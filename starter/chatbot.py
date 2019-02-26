@@ -631,14 +631,14 @@ class Chatbot:
       clarification_name = re.sub(r'[0-9]{4}', '', clarification)
       clarification_year = re.findall('([0-9]{4})', clarification)
      
-      stripped_clarification_name = re.sub(r'[:\(\).?,!]', '', clarification_name)
+      stripped_clarification_name = re.sub(r'[^\w\s]', '', clarification_name)
       indices = []
       for c in candidates:
         title = self.titles[c][0].lower()
         movie_name = re.sub(r' \([0-9]{4}\)', '', title)
         movie_year = re.findall('\(([0-9]{4})\)', title)
 
-        stripped_movie_name = re.sub(r'[:\(\).?,!]', '', movie_name)
+        stripped_movie_name = re.sub(r'[^\w\s]', '', movie_name)
         plausible = False
     
         for y in clarification_year:
