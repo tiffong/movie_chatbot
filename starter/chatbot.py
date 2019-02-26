@@ -10,6 +10,8 @@ from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
 import nltk
+import csv
+import math
 
 
 class Chatbot:
@@ -32,11 +34,17 @@ class Chatbot:
 
       sentiment = movielens.sentiment()
       self.porterStemmer = PorterStemmer()
-      # self.sentiment = sentiment
       self.sentiment = {}
       for word in sentiment:
-          self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
-      self.settt = set()
+        self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
+      with open('deps/polarity_scores.txt', 'r') as f:
+        reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+        next(reader)
+        creative_sentiment = dict(reader)
+      self.creative_sentiment = {}
+      for word in creative_sentiment:
+        self.creative_sentiment[self.porterStemmer.stem(word)] = creative_sentiment[word]
+
       self.negation_words = ['no','not','neither','hardly','barely','doesnt','isnt','wasnt','shouldnt','wouldnt',
                              'couldnt','wont',  'cant','dont','didnt','nor','ni','werent', 'never','none','nobody','nothing','scarcely']
       self.intensifiers = ['amazingly', 'astoundingly', 'bloody', 'dreadfully', 'colossally', 'especially',
@@ -44,6 +52,7 @@ class Chatbot:
                            'insanely', 'outrageously', 'phenomenally', 'quite', 'radically', 'rather', 'real', 'really',
                            'remarkably', 'ridiculously', 'so', 'soo', 'sooo', 'soooo', 'strikingly', 'super',
                            'supremely', 'terribly', 'terrifically', 'too', 'totally', 'unusually', 'very', 'wicked']
+      self.end_intensifiers = ['a lot', 'a bunch', 'a great deal']  #TODO: implement this
 
       #############################################################################
       # TODO: Binarize the movie ratings matrix.                                  #
@@ -377,39 +386,83 @@ class Chatbot:
       :param text: a user-supplied line of text
       :returns: a numerical value for the sentiment of the text
       """
+      find_me = 'zebra'
+      sentiment_mapper = {'pos': 2, 'neg': -2}
+      def tokenize(text):
+        text = re.sub("([\"]).*?([\"])", "\g<1>\g<2>", text)
+        text = text.replace("\"", "").strip()
 
-      text = re.sub("([\"]).*?([\"])", "\g<1>\g<2>", text)
-      text = text.replace("\"", "").strip()
+        text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
+        text = text.lower()  # lowercase
+        words = text.split(' ')  # getting individual words
+        return words
 
-      text = re.sub(r'[^\w\s]', '', text)  # removing punctuation
-      text = text.lower()  # lowercase
-      words = text.split(' ') # getting individual words
-
-      score = 0
-      negate = False
-      for word in words:
+      words = tokenize(text)
+      if not self.creative:
+        score = 0
+        negate = False
+        for word in words:
           word = self.porterStemmer.stem(word)
           if word in self.negation_words:
-              negate = True
+            negate = True
+          #TODO: make this simpler with the dict above
           elif word in self.sentiment:
-              sentiment = self.sentiment[word]
-              if sentiment == 'pos':
-                  if negate:
-                      score -= 1
-                  else:
-                      score += 1
+            sentiment = self.sentiment[word]
+            if sentiment == 'pos':
+              if negate:
+                score -= 1
               else:
-                  if negate:
-                      score += 1
-                  else:
-                      score -= 1
-              # negate = False
-      if score > 0:
+                score += 1
+            else:
+              if negate:
+                score += 1
+              else:
+                score -= 1
+            # negate = False
+        if score > 0:
           return 1
-      elif score < 0:
+        elif score < 0:
           return -1
-      else:
+        else:
           return 0
+      else:
+        scores = []
+        negate = False
+        intense = False
+        for word in words:
+          if word in self.negation_words:
+            negate = True
+            continue
+          if word in self.intensifiers:
+            intense = True
+            continue
+          word = self.porterStemmer.stem(word)
+          if word in self.creative_sentiment:
+            score = int(self.creative_sentiment[word])
+          elif word in self.sentiment:
+            score = self.sentiment[word]
+          else:
+            continue
+          if negate:
+            score *= -1
+          if intense:
+            score *= 2
+          scores.append(score)
+        if len(scores) == 0:
+          return 0
+        final_score = round(np.average(scores))
+        if final_score >= 2:
+          return 2
+        elif final_score >= 1:
+          return 1
+        elif final_score >= 0:
+          return 0
+        elif final_score >= -1:
+          return -1
+        else:
+          return -2
+
+
 
     def extract_sentiment_for_movies(self, text):
       """Creative Feature: Extracts the sentiments from a line of text
@@ -673,6 +726,6 @@ chatbot = Chatbot()
 #print(titles)
 indices = chatbot.find_movies_by_title('the terminal')
 
-print('indeces:')
-print(indices)
+# print('indeces:')
+# print(indices)
 
