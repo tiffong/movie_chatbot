@@ -9,13 +9,11 @@ import re
 from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
-<<<<<<< HEAD
 import nltk
 from collections import defaultdict
-=======
+
 # import nltk
 
->>>>>>> b2b3d950fea89de5897fb72efb77966d482e9b43
 
 class Chatbot:
     """Simple class to implement the chatbot for PA 6."""
