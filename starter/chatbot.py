@@ -22,7 +22,6 @@ class Chatbot:
       self.name = 'moviebot'
 
       self.creative = creative
-      self.mult_movies_select = creative
       self.mult_movie_options = []
 
       # This matrix has the following shape: num_movies x num_users
@@ -205,7 +204,7 @@ class Chatbot:
           return random.choice(self.super_negative_responses).format(movie)
 
       def add_reccomendations_to_response(): #TODO: maybe clean this up and use it for the simple as well
-        recommendation_reponses = []
+        recommendation_responses = []
         recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=True)
         recommended_movies = []
         for i in range(len(recommendation)):
@@ -216,20 +215,23 @@ class Chatbot:
         # num = 5
 
         if num < 3:  # give one movie recommendation
-          recommendation_reponses.append(random.choice(self.announcing_recommendation_responses))
-          recommendation_reponses.append(random.choice(self.recommendation_templates).replace('{}', recommended_movies[0]))
-          recommendation_reponses.append("Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)")
+          recommendation_responses.append(random.choice(self.announcing_recommendation_responses))
+          recommendation_responses.append(random.choice(self.recommendation_templates).replace('{}', recommended_movies[0]))
+          recommendation_responses.append("Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)")
         else:  # give three movie recommendations
           movies_list = "\"{}\",\"{}\",\"{}\".".format(recommended_movies[0],recommended_movies[1],recommended_movies[2])
-          recommendation_reponses.append(random.choice(self.announcing_recommendation_responses_multiple))
-          recommendation_reponses.append(random.choice(self.recommendation_multiple_movies).replace('{}', movies_list))
-          recommendation_reponses.append("Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)")
-        return '\n'.join(recommendation_reponses)
+          recommendation_responses.append(random.choice(self.announcing_recommendation_responses_multiple))
+          recommendation_responses.append(random.choice(self.recommendation_multiple_movies).replace('{}', movies_list))
+          recommendation_responses.append("Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)")
+        return '\n'.join(recommendation_responses)
 
       if self.creative: #TODO: need to add spell-check, ect.
+        creative_mapper = {-2:-1,-1:-1,0:0,1:1,2:1}
         responses = []
         #the movies that the user inputted
-        # movies = self.extract_titles(line)  #TODO this is not working for me right now
+        # movies = self.extract_titles(format(line))  #TODO this is not working for me right now
+        # print(movies)
+        # exit(1)
         movie_sentiments = self.extract_sentiment_for_movies(line)
         movies = [pair[0] for pair in movie_sentiments]
         if len(movies) > 0: # respond to each of the movies
@@ -241,13 +243,13 @@ class Chatbot:
               responses.append("Please be more specific about the movie title \"{}\".".format(movie[1:-1]))
             else: # add a response for that movie
               responses.append(get_response_for_sentiment(movie[1:-1],sentiment))
-              self.user_sentiment[movie_indices[0]] = sentiment
+              self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
           if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
             responses.append('\n' + random.choice(self.asking_for_more_responses))
           else:
             responses.append(add_reccomendations_to_response())
         else:
-          responses.append("{} is not a valid movie.".format(movies[0][1:-1]))
+          responses.append(random.choice(self.asking_for_more_responses))
         response = '\n'.join(responses)
 
       else:
@@ -333,8 +335,8 @@ class Chatbot:
         text = re.sub(r'[?.!:]', '', text)
         # print(text)
         tokens = text.split(' ')
-        #gets substrings of the text input and tries to find movie titles that match
-        #if match is found, the title is added to the list
+        # gets substrings of the text input and tries to find movie titles that match
+        # if match is found, the title is added to the list
         for i in range(len(tokens), 0, -1):
           for j in range(i):
             test_tokens = tokens[j:i]
@@ -904,7 +906,7 @@ if __name__ == '__main__':
 
 # # Test zone
 
-chatbot = Chatbot(True)
+chatbot = Chatbot(False)
 # titles = chatbot.extract_titles('I liked The Notebook!')
 # print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
