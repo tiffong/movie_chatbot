@@ -500,13 +500,8 @@ class Chatbot:
                 if index not in scores[distance]:
                   scores[distance].append(index)
 
-      localmin = minimum
-      for key in scores:
-        if(key <= localmin):
-          localmin = key
-
-      if localmin in scores:
-        return scores[localmin]
+      if minimum in scores:
+        return scores[minimum]
       else:
         return []
 
@@ -740,6 +735,6 @@ chatbot = Chatbot()
 indices = chatbot.find_movies_by_title('the terminal')
 
 #print('testing for movies closest to:')
-#print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
+print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
 
 
