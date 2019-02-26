@@ -3,15 +3,11 @@
 # Original Python code by Ignacio Cases (@cases)
 ######################################################################
 import movielens
-
 import numpy as np
 import re
 from PorterStemmer import PorterStemmer
-from heapq import nlargest
 import random
-import nltk
 import csv
-import math
 
 
 class Chatbot:
