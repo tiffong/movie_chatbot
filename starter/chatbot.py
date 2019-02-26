@@ -9,7 +9,7 @@ import re
 from PorterStemmer import PorterStemmer
 from heapq import nlargest
 import random
-import nltk
+# import nltk
 
 
 class Chatbot:
@@ -688,22 +688,14 @@ if __name__ == '__main__':
   print('    python3 repl.py')
 
 # # Test zone
-<<<<<<< HEAD
-# chatbot = Chatbot(True)
-# # titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"')
-# indices = chatbot.find_movies_by_title("percy jackson")
-# for i in indices:
-#   print(chatbot.titles[i])
-# print(indices)
-# # print(chatbot.titles[indices[0]])
-=======
-chatbot = Chatbot()
+chatbot = Chatbot(True)
 #titles = chatbot.extract_titles('I liked The Notebook!')
 #print(titles)
 input1 = 'the rage: carrie 2'
 indices = chatbot.find_movies_by_title(input1)
 
 print('indeces:')
+jackson_indices = chatbot.find_movies_by_title("percy jackson")
+print(jackson_indices)
 print(indices)
->>>>>>> 4ee52458d9347fa64ab0cb559819566b447721af
 
