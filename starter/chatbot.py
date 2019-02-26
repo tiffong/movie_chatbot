@@ -11,7 +11,7 @@ from heapq import nlargest
 import random
 import csv
 from collections import defaultdict
-import nltk
+# import nltk
 
 
 class Chatbot:
@@ -532,9 +532,29 @@ class Chatbot:
       :param candidates: a list of movie indices
       :returns: a list of indices corresponding to the movies identified by the clarification
       """
+      clarification = clarification.lower()
+
+      clarification_name = re.sub(r'[0-9]{4}', '', clarification)
+      clarification_year = re.findall('([0-9]{4})', clarification)
+     
+      stripped_clarification_name = re.sub(r'[:\(\).?,!]', '', clarification_name)
+      indices = []
       for c in candidates:
-        print(c)
-      pass
+        title = self.titles[c][0].lower()
+        movie_name = re.sub(r' \([0-9]{4}\)', '', title)
+        movie_year = re.findall('\(([0-9]{4})\)', title)
+
+        stripped_movie_name = re.sub(r'[:\(\).?,!]', '', movie_name)
+        plausible = False
+    
+        for y in clarification_year:
+          if y in movie_year: 
+            plausible = True
+        if len(stripped_clarification_name) != 0 and stripped_clarification_name in stripped_movie_name:
+          plausible = True
+        
+        if plausible is True: indices.append(c)
+      return indices
 
 
     #############################################################################
@@ -734,11 +754,10 @@ if __name__ == '__main__':
 
 # # Test zone
 
-chatbot = Chatbot()
+chatbot = Chatbot(True)
 #titles = chatbot.extract_titles('I liked The Notebook!')
 #print(titles)
-indices = chatbot.find_movies_by_title('the terminal')
-
+# indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
 #print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
 
