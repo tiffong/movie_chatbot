@@ -321,39 +321,42 @@ class Chatbot:
         
         for i in range(len(self.titles)):
           curr_title = self.titles[i][0].lower()
-          alternate_titles = curr_title.split(' (') #all of the titles split up
-          
-          if(len(alternate_titles)) == 2: #if it only has 1 title
-            if title == alternate_titles[0]:
-              indices.append(i)
-          else: #if there are more than 1 title, return indices still
-            for j in range(len(alternate_titles) - 1): #iterate through diff titles
-              titles = re.findall(r'(?:a.k.a.\ )*([A-Za-z0-9 ()?!.\',:-]*)[\)]*', alternate_titles[j])
-              #titles: ['hundra', '', 'ringen som klev ut genom f', '', 'nstret och f', '', 'rsvann', '']
-              #titles: ['the unexpected virtue of ignorance', '']
-              #titles: ['fast and the furious 6, the)', '']
-              #print(titles)
-              for x in range(len(titles)-1): 
-                if len(titles) > 3: #foreign accents should not be accounted for
-                  continue
-                else: #these are alternate movies without foreign accents
-                  extracted_title = titles[0] # eg. 'fast and the furious 6, the)'
+          alternate_titles = curr_title.split(' (') #list of all alternate titles
+          #print(alternate_titles)
+          # if(len(alternate_titles)) == 2: #if it only has 1 title
+          #   if title == alternate_titles[0]:
+          #     indices.append(i)
 
-                  if extracted_title.endswith(')'): #take off extra ) at end
-                    extracted_title = extracted_title[:-1]
-                  
-                  if extracted_title == title:
+          #else: #if there are more than 1 valid title
+          for j in range(len(alternate_titles) - 1): #iterate through diff titles
+            titles = re.findall(r'(?:a.k.a.\ )*([A-Za-z0-9 ()?!.\',:-]*)[\)]*', alternate_titles[j])
+            #print(titles)
+            #titles: ['hundra', '', 'ringen som klev ut genom f', '', 'nstret och f', '', 'rsvann', '']
+            #titles: ['the unexpected virtue of ignorance', '']
+            #titles: ['fast and the furious 6, the)', '']
+            #titles ['doragon b', '', 'ru z: tatta hitori no saishuu kessen - furiiza ni itonda z senshi kakarotto no chichi)', '']
+            #print(titles)
+
+            if len(titles) > 3: #foreign accents should not be accounted for
+              continue
+            else: #these are alternate movies without foreign accents
+              extracted_title = titles[0] # eg. 'fast and the furious 6, the)'
+
+              if extracted_title.endswith(')'): #take off extra ) at end --> fast and the furious 6, the
+                extracted_title = extracted_title[:-1] 
+              
+              if (extracted_title == title and i not in indices):
+                #print(extracted_title)
+                indices.append(i)
+
+              title_split = extracted_title.split(', ') #for alternate titles that have 'terminal, the' format
+              if(len(title_split) > 1):
+                if (title_split[1] in self.articles):
+                  #print(title_split[1])
+                  extracted_title = title_split[1] + ' ' + title_split[0] #eg 'the hunt'
+                  if (extracted_title == title):
                     #print(extracted_title)
                     indices.append(i)
-
-                  title_split = extracted_title.split(', ')
-                  if(len(title_split) > 1):
-                    if (title_split[1] in self.articles):
-                      #print(title_split[1])
-                      extracted_title = title_split[1] + ' ' + title_split[0] #eg 'the hunt'
-                      if (extracted_title == title):
-                        #print(extracted_title)
-                        indices.append(i)
 
 
       return indices
@@ -671,7 +674,8 @@ if __name__ == '__main__':
 chatbot = Chatbot()
 #titles = chatbot.extract_titles('I liked The Notebook!')
 #print(titles)
-indices = chatbot.find_movies_by_title('the terminal')
+input1 = 'the rage: carrie 2'
+indices = chatbot.find_movies_by_title(input1)
 
 print('indeces:')
 print(indices)
