@@ -237,6 +237,7 @@ class Chatbot:
         creative_mapper = {-2:-1,-1:-1,0:0,1:1,2:1}
         responses = []
 
+
         #user was corrected and said 'yes to the corrected movie'
         if (line.lower() in self.agreement_words):
           self.typed_yes = True
@@ -254,7 +255,6 @@ class Chatbot:
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
-
         
         
         movie_sentiments = self.extract_sentiment_for_movies(line)
@@ -272,7 +272,6 @@ class Chatbot:
               self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
           if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
             responses.append('\n' + random.choice(self.asking_for_more_responses))
-
 
           else:
             responses.append(add_reccomendations_to_response())
