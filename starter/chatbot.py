@@ -199,6 +199,15 @@ class Chatbot:
       # it is highly recommended.                                                 #
       #############################################################################
 
+      def get_movie_title(index):
+        title = self.titles[index][0]
+        movie_title = re.sub(r' \([0-9]{4}\)', '', title)
+        tokens = movie_title.split(' ')
+        if tokens[len(tokens) - 1].lower() in self.articles:
+          movie_title = tokens[len(tokens) - 1] + ' ' + ' '.join(tokens[:len(tokens) - 1])
+          movie_title = movie_title[:-1]
+        return movie_title
+
       def get_response_for_sentiment(movie,sentiment):  #TODO: use this function for simple mode as well
         if sentiment == 2:
           return random.choice(self.super_positive_responses).format(movie)
@@ -244,17 +253,31 @@ class Chatbot:
         if (self.user_was_corrected and self.typed_yes):
           #print('yuh!!!!!!!')
           #self.user_sentiment[self.corrected_movies[0][0]] = self.saved_sentiment
-          response = 'Great. I added your review to my system. Tell me about another movie.'
+          responses.append('Great. I added your review to my system. Tell me about another movie.')
           self.typed_yes = False
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
         elif (self.user_was_corrected and not self.typed_yes):
-          response = 'No worries. Tell me about a film you have watched.'
+          responses.append('No worries. Tell me about a film you have watched.')
           
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
+        elif len(self.mult_movie_options) > 0: #disambiguate the movie options
+          possible_movies = self.disambiguate(line, self.mult_movie_options)
+          if len(possible_movies) == 1:
+            responses.append(get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment))
+            responses.append(random.choice(self.asking_for_more_responses))
+            self.user_sentiment[possible_movies[0]] = creative_mapper[self.saved_sentiment]
+            self.saved_sentiment = 0
+            self.mult_movie_options = []
+          else:
+            responses.append("Based on your response, I narrowed it down to " + str(len(self.mult_movie_options)) + " movies:")
+            for i in possible_movies:
+              responses.append(self.titles[i][0])
+            responses.append("To which of these are you referring?")
+            self.mult_movie_options = possible_movies
         else: #if their response has nothing to do with the system
         
           movie_sentiments = self.extract_sentiment_for_movies(line)
@@ -266,10 +289,17 @@ class Chatbot:
               if len(movie_indices) == 0: # the movie was not found
                 responses.append("{} is not a valid movie.".format(movie))
               elif len(movie_indices) > 1: # the movie matches multiple options
-                responses.append("Please be more specific about the movie title \"{}\".".format(movie))
+                responses.append("I found several movies with the name \"{}\":".format(movie))
+                for i in movie_indices:
+                  responses.append(self.titles[i][0])
+                responses.append('To which of these films are you referring?')
+                self.saved_sentiment = sentiment
+                self.mult_movie_options = movie_indices
               else: # add a response for that movie
-                responses.append(get_response_for_sentiment(movie,sentiment))
+                movie_title = get_movie_title(movie_indices[0])
+                responses.append(get_response_for_sentiment(movie_title,sentiment))
                 self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
+            
             if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
               responses.append('\n' + random.choice(self.asking_for_more_responses))
             else:
@@ -282,7 +312,7 @@ class Chatbot:
               #print(self.saved_sentiment)
             else:
               responses.append(random.choice(self.asking_for_more_responses))
-          response = '\n'.join(responses)
+        response = '\n'.join(responses)
 
       else:
 
