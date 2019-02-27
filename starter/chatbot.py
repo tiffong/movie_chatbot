@@ -255,36 +255,36 @@ class Chatbot:
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
-        else: #if their response has nothing to do with the system
         
-          movie_sentiments = self.extract_sentiment_for_movies(line)
-          movies = [pair[0] for pair in movie_sentiments]
-          
-          if len(movies) > 0: # respond to each of the movies
-            for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
-              movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
-              if len(movie_indices) == 0: # the movie was not found
-                responses.append("{} is not a valid movie.".format(movie))
-              elif len(movie_indices) > 1: # the movie matches multiple options
-                responses.append("Please be more specific about the movie title \"{}\".".format(movie))
-              else: # add a response for that movie
-                responses.append(get_response_for_sentiment(movie,sentiment))
-                self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
-            if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
-              responses.append('\n' + random.choice(self.asking_for_more_responses))
-            else:
-              responses.append(add_reccomendations_to_response())
+        
+        movie_sentiments = self.extract_sentiment_for_movies(line)
+        movies = [pair[0] for pair in movie_sentiments]
+        
+        if len(movies) > 0: # respond to each of the movies
+          for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
+            movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
+            if len(movie_indices) == 0: # the movie was not found
+              responses.append("{} is not a valid movie.".format(movie))
+            elif len(movie_indices) > 1: # the movie matches multiple options
+              responses.append("Please be more specific about the movie title \"{}\".".format(movie))
+            else: # add a response for that movie
+              responses.append(get_response_for_sentiment(movie,sentiment))
+              self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
+          if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
+            responses.append('\n' + random.choice(self.asking_for_more_responses))
           else:
-            if (len(self.corrected_movies) > 1):
-              responses.append('Did you mean to type: ' + self.corrected_movies[0] + '?')
-              self.user_was_corrected = True
-              self.saved_sentiment = self.extract_sentiment(format(line))
-              #print(self.saved_sentiment)
-            else:
-              responses.append(random.choice(self.asking_for_more_responses))
-          response = '\n'.join(responses)
+            responses.append(add_reccomendations_to_response())
+        else:
+          if (len(self.corrected_movies) > 1):
+            responses.append('Did you mean to type: ' + self.corrected_movies[0] + '?')
+            self.user_was_corrected = True
+            self.saved_sentiment = self.extract_sentiment(format(line))
+            #print(self.saved_sentiment)
+          else:
+            responses.append(random.choice(self.asking_for_more_responses))
+        response = '\n'.join(responses)
 
-      else:
+      else: #if in starter mode
 
         #the movies that the user inputted
         movies = self.extract_titles(format(line))
@@ -378,7 +378,7 @@ class Chatbot:
             if len(movie_search) > 0:
               titles.append(test_title)
               return list(set(titles))
-            elif len(movie_search) == 0:
+            elif len(movie_search) == 0 and len(titles) == 0: #when to do spellcheck
               #if test_title == 'the notbook':
                 #print('hi')
               spellcheck = self.find_movies_closest_to_title(test_title, max_distance=2)
