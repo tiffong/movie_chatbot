@@ -283,7 +283,7 @@ class Chatbot:
             self.user_sentiment[possible_movies[0]] = creative_mapper[self.saved_sentiment]
             self.saved_sentiment = 0
             self.mult_movie_options = []
-          else:
+          else: #continue to disambiguate if more than one movie is possible
             responses.append("Based on your response, I narrowed it down to " + str(len(self.mult_movie_options)) + " movies:")
             for i in possible_movies:
               responses.append(self.titles[i][0])
@@ -313,7 +313,7 @@ class Chatbot:
                 self.saved_sentiment = sentiment
                 self.mult_movie_options = movie_indices
               else: # add a response for that movie
-                responses.append(get_response_for_sentiment(movie,sentiment))
+                responses.append(get_response_for_sentiment(get_movie_title(movie_indices[0]),sentiment))
                 self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
             if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
               responses.append(random.choice(self.asking_for_more_responses))
@@ -323,7 +323,7 @@ class Chatbot:
             if not spell_check():
               responses.append("I do not understand.")
               responses.append(random.choice(self.asking_for_more_responses))
-          response = '\n'.join(responses)
+        response = '\n'.join(responses)
       else:
 
         #the movies that the user inputted
@@ -382,6 +382,38 @@ class Chatbot:
       #############################################################################
       return response
 
+    # returns indices of movies that exacty match the input
+    # not case-sensitive
+    def find_exact_title(self, title):
+      indices = []
+      title = title.lower()
+      title_split = title.split(' ')
+      if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]): #if user included a date
+        if title_split[0] in self.articles:
+          title = ''
+          for i in range(1, len(title_split) - 1):
+            title += title_split[i]
+            if i < len(title_split) - 2: title += ' '
+          title +=', ' + title_split[0]
+          title += ' ' + title_split[len(title_split) - 1]
+        for i in range(len(self.titles)):
+          curr_title = self.titles[i][0].lower()
+          if title == curr_title:
+            indices.append(i)
+      else: #if not user did not include date
+        if title_split[0] in self.articles:
+          title = ''
+          for i in range(1, len(title_split)):
+            title += title_split[i]
+            if i < len(title_split) - 1: title += ' '
+          title += ', ' + title_split[0]
+        for i in range(len(self.titles)):
+          curr_title = self.titles[i][0].lower()
+          movie_name = curr_title.split(' (')
+          if title == movie_name[0]:
+            indices.append(i)
+      return indices
+
     def extract_titles(self, text):
       """Extract potential movie titles from a line of text.
 
@@ -409,36 +441,22 @@ class Chatbot:
         # gets substrings of the text input and tries to find movie titles that match
         # if match is found, the title is added to the list
         for i in range(len(tokens), 0, -1):
-          print(titles)
-          #print(titles)
           for j in range(i):
             test_tokens = tokens[j:i]
             test_title = ' '.join(test_tokens)
             if test_title.lower() in self.articles or test_title == '' or test_title == 'yes':  # so it doesnt return I or the as titles
               continue
-            movie_search = self.find_movies_by_title(test_title)
+            movie_search = self.find_exact_title(test_title)
             if len(movie_search) > 0:
               titles.append(test_title)
-              return list(set(titles))
             elif len(movie_search) == 0:
-              # if test_title == 'the notbook':
-              # print('hi')
               spellcheck = self.find_movies_closest_to_title(test_title, max_distance=2)
-              # print(len(spellcheck))
               if len(spellcheck) >= 1 and len(self.corrected_movies) < 2:
-                # print(test_title)
-                #
                 for i in range(len(spellcheck)):
                   ind = spellcheck[i]
                   movie = self.titles[ind][0]
                   if (len(self.corrected_movies) < 2):
                     self.corrected_movies.append(movie)
-
-                # print(mov)
-                # print('Did you mean this movie: ', self.titles[mov][0])
-
-
-
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
       return titles
@@ -519,30 +537,7 @@ class Chatbot:
                     indices.append(i)
 
       else: #if not in creative mode
-        if re.fullmatch('\([0-9]{4}\)', title_split[len(title_split) - 1]): #if user included a date
-          if title_split[0] in self.articles:
-            title = ''
-            for i in range(1, len(title_split) - 1):
-              title += title_split[i]
-              if i < len(title_split) - 2: title += ' '
-            title +=', ' + title_split[0]
-            title += ' ' + title_split[len(title_split) - 1]
-          for i in range(len(self.titles)):
-            curr_title = self.titles[i][0].lower()
-            if title == curr_title:
-              indices.append(i)
-        else: #if not user did not include date
-          if title_split[0] in self.articles:
-            title = ''
-            for i in range(1, len(title_split)):
-              title += title_split[i]
-              if i < len(title_split) - 1: title += ' '
-            title += ', ' + title_split[0]
-          for i in range(len(self.titles)):
-            curr_title = self.titles[i][0].lower()
-            movie_name = curr_title.split(' (')
-            if title == movie_name[0]:
-              indices.append(i)
+        indices = self.find_exact_title(title)
       return indices
 
     #TODO: write function that detects strong emotional language
