@@ -236,7 +236,7 @@ class Chatbot:
       if self.creative: #TODO: need to add spell-check, ect.
         creative_mapper = {-2:-1,-1:-1,0:0,1:1,2:1}
         responses = []
-        
+
 
         #user was corrected and said 'yes to the corrected movie'
         if (line.lower() in self.agreement_words):
@@ -251,7 +251,7 @@ class Chatbot:
           self.user_was_corrected = False
         elif (self.user_was_corrected and not self.typed_yes):
           response = 'No worries. Tell me about a film you have watched.'
-          
+
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
@@ -272,6 +272,7 @@ class Chatbot:
               self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
           if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
             responses.append('\n' + random.choice(self.asking_for_more_responses))
+
           else:
             responses.append(add_reccomendations_to_response())
         else:
@@ -391,9 +392,9 @@ class Chatbot:
                   movie = self.titles[ind][0]
                   if (len(self.corrected_movies) < 2):
                     self.corrected_movies.append(movie)
-                
+
                 #print(mov)
-                #print('Did you mean this movie: ', self.titles[mov][0]) 
+                #print('Did you mean this movie: ', self.titles[mov][0])
 
 
 
@@ -615,14 +616,11 @@ class Chatbot:
       """Creative Feature: Extracts the sentiments from a line of text
       that may contain multiple movies. Note that the sentiments toward
       the movies may be different.
-
       You should use the same sentiment values as extract_sentiment, described above.
       Hint: feel free to call previously defined functions to implement this.
-
       Example:
         sentiments = chatbot.extract_sentiment_for_text('I liked both "Titanic (1997)" and "Ex Machina".')
         print(sentiments) // prints [("Titanic (1997)", 1), ("Ex Machina", 1)]
-
       :param text: a user-supplied line of text
       :returns: a list of tuples, where the first item in the tuple is a movie title,
         and the second is the sentiment in the text toward that movie
@@ -630,9 +628,9 @@ class Chatbot:
 
       def index_movies(text):
         index = {}
-        movies = self.extract_titles(text)
-        #print('movies are', movies)
-        for i, match in enumerate(movies):
+        expression = r'(\".*?\")'
+        matches = re.findall(expression, text)
+        for i, match in enumerate(matches):
           id = ' __' + str(i) + '__ '
           index[id.strip()] = match
           text = text.replace(match, id)
@@ -642,9 +640,9 @@ class Chatbot:
       index, text = index_movies(text)
 
       # split into phrases
-      text = re.sub(self.clause_negation,self.INFLECT,text)
-      phrases = re.split(self.sentence_inflection_splitters,text)
-      #TODO: two complete thoughts with and
+      text = re.sub(self.clause_negation, self.INFLECT, text)
+      phrases = re.split(self.sentence_inflection_splitters, text)
+      # TODO: two complete thoughts with and
       # new_phrases = []
       # for phrase in phrases:
       #   if 'and' in phrase:
@@ -661,7 +659,7 @@ class Chatbot:
           if token == self.INFLECT:
             sentiment *= -1
           if token in index:
-            sentiments.append((index[token], sentiment))
+            sentiments.append((index[token][1:-1], sentiment))
       return sentiments
 
     def find_movies_closest_to_title(self, title, max_distance=3):
@@ -688,7 +686,7 @@ class Chatbot:
       minimum = max_distance #min starts at 3
       for i in range(len(self.titles)):
           database_title = self.titles[i][0].lower().split(' (')[0] #title from database
-          
+
           title_split = database_title.split(', ')
           if(len(title_split) > 1 and title_split[1] in self.articles):
             database_title = title_split[1] + ' ' + title_split[0]
@@ -955,7 +953,7 @@ class Chatbot:
       can do and how the user can interact with it.
       """
       return """
-      This is a MovieBot designed to help you find a movie to watch! 
+      This is a MovieBot designed to help you find a movie to watch!
       """
 
 
@@ -972,6 +970,4 @@ chatbot = Chatbot(True)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
 
-#print(chatbot.find_movies_closest_to_title("the notebok")) 
-
-
+#print(chatbot.find_movies_closest_to_title("the notebok"))
