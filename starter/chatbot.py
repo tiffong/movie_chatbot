@@ -237,7 +237,6 @@ class Chatbot:
         creative_mapper = {-2:-1,-1:-1,0:0,1:1,2:1}
         responses = []
 
-
         #user was corrected and said 'yes to the corrected movie'
         if (line.lower() in self.agreement_words):
           self.typed_yes = True
@@ -256,8 +255,14 @@ class Chatbot:
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
         else: #if their response has nothing to do with the system
-
-          movie_sentiments = self.extract_sentiment_for_movies(line)
+          if "\"" not in line:
+            movies = self.extract_titles(line)
+            if len(movies) != 1:
+              return random.choice(self.negative_responses)  # TODO: fix this
+            else:
+              movie_sentiments = [(movies[0], self.extract_sentiment(line))]
+          else:
+            movie_sentiments = self.extract_sentiment_for_movies(line)
           movies = [pair[0] for pair in movie_sentiments]
 
           if len(movies) > 0: # respond to each of the movies
