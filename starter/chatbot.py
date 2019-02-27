@@ -437,7 +437,7 @@ class Chatbot:
       movie_stripped_title = re.sub(r'[^\w\s]', '', title)
       stripped_title_split = movie_stripped_title.split(" ")
 
-      if(self.creative):
+      if(False):
 
         #disambiguate part 1
         for i in range(len(self.titles)):
