@@ -59,6 +59,7 @@ class Chatbot:
       self.clause_negation = r'but not|and not|although not|though not|even though not|even if not'
       self.INFLECT = '__inflect__'
       self.sentence_inflection_splitters = r'but|although|because|since|though|even though|even if'
+      self.agreement_words = ['yes', 'yeah', 'yup', 'mhm', 'mhmm', 'yep', 'yuh', 'yah', 'ya', 'y', 'of course', 'duh', 'mhmmm']
 
       #############################################################################
       # TODO: Binarize the movie ratings matrix.                                  #
@@ -122,6 +123,13 @@ class Chatbot:
 
 
       self.user_sentiment = np.zeros(len(self.titles))
+
+      self.corrected_movies = []
+      self.user_was_corrected = False
+      self.typed_yes = False
+      self.prev_line = ''
+      self.saved_sentiment = 0
+
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -228,29 +236,53 @@ class Chatbot:
       if self.creative: #TODO: need to add spell-check, ect.
         creative_mapper = {-2:-1,-1:-1,0:0,1:1,2:1}
         responses = []
-        #the movies that the user inputted
-        # movies = self.extract_titles(format(line))  #TODO this is not working for me right now
-        # print(movies)
-        # exit(1)
-        movie_sentiments = self.extract_sentiment_for_movies(line)
-        movies = [pair[0] for pair in movie_sentiments]
-        if len(movies) > 0: # respond to each of the movies
-          for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
-            movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
-            if len(movie_indices) == 0: # the movie was not found
-              responses.append("{} is not a valid movie.".format(movie))
-            elif len(movie_indices) > 1: # the movie matches multiple options
-              responses.append("Please be more specific about the movie title \"{}\".".format(movie))
-            else: # add a response for that movie
-              responses.append(get_response_for_sentiment(movie,sentiment))
-              self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
-          if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
-            responses.append('\n' + random.choice(self.asking_for_more_responses))
+        
+
+        #user was corrected and said 'yes to the corrected movie'
+        if (line.lower() in self.agreement_words):
+          self.typed_yes = True
+        if (self.user_was_corrected and self.typed_yes):
+          #print('yuh!!!!!!!')
+          #self.user_sentiment[self.corrected_movies[0][0]] = self.saved_sentiment
+          response = 'Great. I added your review to my system. Tell me about another movie.'
+          self.typed_yes = False
+          self.saved_sentiment = 0
+          self.corrected_movies = [] #reset corrected movies list
+          self.user_was_corrected = False
+        elif (self.user_was_corrected and not self.typed_yes):
+          response = 'No worries. Tell me about a film you have watched.'
+          
+          self.saved_sentiment = 0
+          self.corrected_movies = [] #reset corrected movies list
+          self.user_was_corrected = False
+        else: #if their response has nothing to do with the system
+        
+          movie_sentiments = self.extract_sentiment_for_movies(line)
+          movies = [pair[0] for pair in movie_sentiments]
+          
+          if len(movies) > 0: # respond to each of the movies
+            for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
+              movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
+              if len(movie_indices) == 0: # the movie was not found
+                responses.append("{} is not a valid movie.".format(movie))
+              elif len(movie_indices) > 1: # the movie matches multiple options
+                responses.append("Please be more specific about the movie title \"{}\".".format(movie))
+              else: # add a response for that movie
+                responses.append(get_response_for_sentiment(movie,sentiment))
+                self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
+            if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
+              responses.append('\n' + random.choice(self.asking_for_more_responses))
+            else:
+              responses.append(add_reccomendations_to_response())
           else:
-            responses.append(add_reccomendations_to_response())
-        else:
-          responses.append(random.choice(self.asking_for_more_responses))
-        response = '\n'.join(responses)
+            if (len(self.corrected_movies) > 1):
+              responses.append('Did you mean to type: ' + self.corrected_movies[0] + '?')
+              self.user_was_corrected = True
+              self.saved_sentiment = self.extract_sentiment(format(line))
+              #print(self.saved_sentiment)
+            else:
+              responses.append(random.choice(self.asking_for_more_responses))
+          response = '\n'.join(responses)
 
       else:
 
@@ -340,10 +372,29 @@ class Chatbot:
           for j in range(i):
             test_tokens = tokens[j:i]
             test_title = ' '.join(test_tokens)
+            if test_title.lower() in self.articles or test_title == '' or test_title == 'yes': #so it doesnt return I or the as titles
+              continue
             movie_search = self.find_movies_by_title(test_title)
             if len(movie_search) > 0:
               titles.append(test_title)
               return list(set(titles))
+            elif len(movie_search) == 0:
+              #if test_title == 'the notbook':
+                #print('hi')
+              spellcheck = self.find_movies_closest_to_title(test_title, max_distance=2)
+              #print(len(spellcheck))
+              if len(spellcheck) >= 1 and len(self.corrected_movies) < 2:
+                #print(test_title)
+                #
+                for i in range(len(spellcheck)):
+                  ind = spellcheck[i]
+                  movie = self.titles[ind][0]
+                  if (len(self.corrected_movies) < 2):
+                    self.corrected_movies.append(movie)
+                
+                #print(mov)
+                #print('Did you mean this movie: ', self.titles[mov][0]) 
+
 
 
       else:
@@ -580,7 +631,7 @@ class Chatbot:
       def index_movies(text):
         index = {}
         movies = self.extract_titles(text)
-        print('movies are', movies)
+        #print('movies are', movies)
         for i, match in enumerate(movies):
           id = ' __' + str(i) + '__ '
           index[id.strip()] = match
@@ -637,7 +688,12 @@ class Chatbot:
       minimum = max_distance #min starts at 3
       for i in range(len(self.titles)):
           database_title = self.titles[i][0].lower().split(' (')[0] #title from database
-          #print(database_title)
+          
+          title_split = database_title.split(', ')
+          if(len(title_split) > 1 and title_split[1] in self.articles):
+            database_title = title_split[1] + ' ' + title_split[0]
+            #print(title_split[0], title_split[1])
+            #print(database_title)
           distance = nltk.edit_distance(title, database_title)
           #distance = nltk.edit_distance(title, "batman")
 
@@ -910,10 +966,10 @@ if __name__ == '__main__':
 # # Test zone
 
 chatbot = Chatbot(True)
-titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"!')
-print(titles)
+#titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"!')
+#print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
 
-print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
+#print(chatbot.find_movies_closest_to_title("the notebok")) 
 
