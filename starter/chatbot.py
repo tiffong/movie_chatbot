@@ -899,10 +899,7 @@ class Chatbot:
       can do and how the user can interact with it.
       """
       return """
-      Your task is to implement the chatbot as detailed in the PA6 instructions.
-      Remember: in the starter mode, movie names will come in quotation marks and
-      expressions of sentiment will be simple!
-      Write here the description for your own chatbot!
+      This is a MovieBot designed to help you find a movie to watch! 
       """
 
 
