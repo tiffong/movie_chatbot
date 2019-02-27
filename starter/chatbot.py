@@ -270,15 +270,15 @@ class Chatbot:
         
           movie_sentiments = self.extract_sentiment_for_movies(line)
           movies = [pair[0] for pair in movie_sentiments]
-          print(movies)
+          #print(movies)
           # exit(1)
-          print(self.corrected_movies)
+          #print(self.corrected_movies)
           if len(movies) > 0: # respond to each of the movies
             for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
               movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
-              print(movie,movie_indices)
+              #print(movie,movie_indices)
               if len(movie_indices) == 0: # the movie was not found
-                print('welp')
+                #print('welp')
                 if not spell_check():
                   responses.append("{} is not a valid movie.".format(movie))
               elif len(movie_indices) > 1: # the movie matches multiple options
@@ -382,6 +382,7 @@ class Chatbot:
         # if match is found, the title is added to the list
         for i in range(len(tokens), 0, -1):
           print(titles)
+          #print(titles)
           for j in range(i):
             test_tokens = tokens[j:i]
             test_title = ' '.join(test_tokens)
@@ -437,7 +438,7 @@ class Chatbot:
       movie_stripped_title = re.sub(r'[^\w\s]', '', title)
       stripped_title_split = movie_stripped_title.split(" ")
 
-      if(False):
+      if(self.creative):
 
         #disambiguate part 1
         for i in range(len(self.titles)):
