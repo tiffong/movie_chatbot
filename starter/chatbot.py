@@ -909,6 +909,6 @@ print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
 
-# print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
+print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
 
 
