@@ -236,13 +236,13 @@ class Chatbot:
         movies = [pair[0] for pair in movie_sentiments]
         if len(movies) > 0: # respond to each of the movies
           for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
-            movie_indices = self.find_movies_by_title(movie[1:-1]) # try to find that movie in the database
+            movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
             if len(movie_indices) == 0: # the movie was not found
-              responses.append("{} is not a valid movie.".format(movie[1:-1]))
+              responses.append("{} is not a valid movie.".format(movie))
             elif len(movie_indices) > 1: # the movie matches multiple options
-              responses.append("Please be more specific about the movie title \"{}\".".format(movie[1:-1]))
+              responses.append("Please be more specific about the movie title \"{}\".".format(movie))
             else: # add a response for that movie
-              responses.append(get_response_for_sentiment(movie[1:-1],sentiment))
+              responses.append(get_response_for_sentiment(movie,sentiment))
               self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
           if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
             responses.append('\n' + random.choice(self.asking_for_more_responses))
@@ -579,9 +579,9 @@ class Chatbot:
 
       def index_movies(text):
         index = {}
-        expression = r'(\".*?\")'
-        matches = re.findall(expression, text)
-        for i, match in enumerate(matches):
+        movies = self.extract_titles(text)
+        print('movies are', movies)
+        for i, match in enumerate(movies):
           id = ' __' + str(i) + '__ '
           index[id.strip()] = match
           text = text.replace(match, id)
@@ -915,4 +915,5 @@ print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
 
-print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3))
+print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
+
