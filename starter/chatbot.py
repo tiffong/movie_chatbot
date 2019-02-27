@@ -976,7 +976,13 @@ if __name__ == '__main__':
 # # Test zone
 
 chatbot = Chatbot(True)
-titles = chatbot.extract_titles('i liked the notbook')
+titles = chatbot.extract_titles('I liked "The Notebook" and "Titanic"!')
 print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
+<<<<<<< HEAD
+=======
+
+print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
+
+>>>>>>> parent of aec3043... merging starr's branch
