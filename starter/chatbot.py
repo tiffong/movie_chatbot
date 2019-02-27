@@ -123,6 +123,10 @@ class Chatbot:
 
       self.user_sentiment = np.zeros(len(self.titles))
 
+      self.corrected_movies = []
+      self.agreement_words = ['yes', 'yeah', 'yup', 'mhm', 'mhmm', 'yep', 'yuh', 'yah', 'ya', 'y', 'of course', 'duh', 'mhmmm']
+      self.user_was_corrected = False
+
       #############################################################################
       #                             END OF YOUR CODE                              #
       #############################################################################
@@ -228,7 +232,7 @@ class Chatbot:
       if self.creative: #TODO: need to add spell-check, ect.
         creative_mapper = {-2:-1,-1:-1,0:0,1:1,2:1}
         responses = []
-<<<<<<< HEAD
+
 
 
         #user was corrected and said 'yes to the corrected movie'
@@ -253,14 +257,14 @@ class Chatbot:
         movie_sentiments = self.extract_sentiment_for_movies(line)
         movies = [pair[0] for pair in movie_sentiments]
         
-=======
+
         #the movies that the user inputted
         # movies = self.extract_titles(format(line))  #TODO this is not working for me right now
         # print(movies)
         # exit(1)
         movie_sentiments = self.extract_sentiment_for_movies(line)
         movies = [pair[0] for pair in movie_sentiments]
->>>>>>> parent of 3352f37... Merge branch 'master' of github.com:tiffong/movie_chatbot
+
         if len(movies) > 0: # respond to each of the movies
           for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
             movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
@@ -273,7 +277,7 @@ class Chatbot:
               self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
           if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
             responses.append('\n' + random.choice(self.asking_for_more_responses))
-<<<<<<< HEAD
+
 
           else:
             responses.append(add_reccomendations_to_response())
@@ -285,12 +289,12 @@ class Chatbot:
             #print(self.saved_sentiment)
           else:
             responses.append(random.choice(self.asking_for_more_responses))
-=======
-          else:
-            responses.append(add_reccomendations_to_response())
-        else:
-          responses.append(random.choice(self.asking_for_more_responses))
->>>>>>> parent of 3352f37... Merge branch 'master' of github.com:tiffong/movie_chatbot
+
+        #   else:
+        #     responses.append(add_reccomendations_to_response())
+        # else:
+        #   responses.append(random.choice(self.asking_for_more_responses))
+
         response = '\n'.join(responses)
 
       else: #if in starter mode
@@ -385,7 +389,7 @@ class Chatbot:
             if len(movie_search) > 0:
               titles.append(test_title)
               return list(set(titles))
-<<<<<<< HEAD
+
             elif len(movie_search) == 0 and len(titles) == 0: #when to do spellcheck
               #if test_title == 'the notbook':
                 #print('hi')
@@ -403,8 +407,6 @@ class Chatbot:
                 #print(mov)
                 #print('Did you mean this movie: ', self.titles[mov][0])
 
-=======
->>>>>>> parent of 3352f37... Merge branch 'master' of github.com:tiffong/movie_chatbot
 
 
       else:
@@ -637,15 +639,10 @@ class Chatbot:
 
       def index_movies(text):
         index = {}
-<<<<<<< HEAD
+
         expression = r'(\".*?\")'
         matches = re.findall(expression, text)
         for i, match in enumerate(matches):
-=======
-        movies = self.extract_titles(text)
-        print('movies are', movies)
-        for i, match in enumerate(movies):
->>>>>>> parent of 3352f37... Merge branch 'master' of github.com:tiffong/movie_chatbot
           id = ' __' + str(i) + '__ '
           index[id.strip()] = match
           text = text.replace(match, id)
@@ -701,16 +698,12 @@ class Chatbot:
       minimum = max_distance #min starts at 3
       for i in range(len(self.titles)):
           database_title = self.titles[i][0].lower().split(' (')[0] #title from database
-<<<<<<< HEAD
 
           title_split = database_title.split(', ')
           if(len(title_split) > 1 and title_split[1] in self.articles):
             database_title = title_split[1] + ' ' + title_split[0]
             #print(title_split[0], title_split[1])
             #print(database_title)
-=======
-          #print(database_title)
->>>>>>> parent of 3352f37... Merge branch 'master' of github.com:tiffong/movie_chatbot
           distance = nltk.edit_distance(title, database_title)
           #distance = nltk.edit_distance(title, "batman")
 
@@ -987,10 +980,3 @@ titles = chatbot.extract_titles('i liked the notbook')
 print(titles)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
-
-<<<<<<< HEAD
-#print(chatbot.find_movies_closest_to_title("the notebok"))
-=======
-# print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
-
->>>>>>> parent of 3352f37... Merge branch 'master' of github.com:tiffong/movie_chatbot
