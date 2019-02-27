@@ -22,7 +22,6 @@ class Chatbot:
       self.name = 'moviebot'
 
       self.creative = creative
-      self.mult_movies_select = creative
       self.mult_movie_options = []
 
       # This matrix has the following shape: num_movies x num_users
@@ -205,7 +204,7 @@ class Chatbot:
           return random.choice(self.super_negative_responses).format(movie)
 
       def add_reccomendations_to_response(): #TODO: maybe clean this up and use it for the simple as well
-        recommendation_reponses = []
+        recommendation_responses = []
         recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=True)
         recommended_movies = []
         for i in range(len(recommendation)):
@@ -216,38 +215,41 @@ class Chatbot:
         # num = 5
 
         if num < 3:  # give one movie recommendation
-          recommendation_reponses.append(random.choice(self.announcing_recommendation_responses))
-          recommendation_reponses.append(random.choice(self.recommendation_templates).replace('{}', recommended_movies[0]))
-          recommendation_reponses.append("Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)")
+          recommendation_responses.append(random.choice(self.announcing_recommendation_responses))
+          recommendation_responses.append(random.choice(self.recommendation_templates).replace('{}', recommended_movies[0]))
+          recommendation_responses.append("Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)")
         else:  # give three movie recommendations
           movies_list = "\"{}\",\"{}\",\"{}\".".format(recommended_movies[0],recommended_movies[1],recommended_movies[2])
-          recommendation_reponses.append(random.choice(self.announcing_recommendation_responses_multiple))
-          recommendation_reponses.append(random.choice(self.recommendation_multiple_movies).replace('{}', movies_list))
-          recommendation_reponses.append("Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)")
-        return '\n'.join(recommendation_reponses)
+          recommendation_responses.append(random.choice(self.announcing_recommendation_responses_multiple))
+          recommendation_responses.append(random.choice(self.recommendation_multiple_movies).replace('{}', movies_list))
+          recommendation_responses.append("Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)")
+        return '\n'.join(recommendation_responses)
 
       if self.creative: #TODO: need to add spell-check, ect.
+        creative_mapper = {-2:-1,-1:-1,0:0,1:1,2:1}
         responses = []
         #the movies that the user inputted
-        # movies = self.extract_titles(line)  #TODO this is not working for me right now
+        # movies = self.extract_titles(format(line))  #TODO this is not working for me right now
+        # print(movies)
+        # exit(1)
         movie_sentiments = self.extract_sentiment_for_movies(line)
         movies = [pair[0] for pair in movie_sentiments]
         if len(movies) > 0: # respond to each of the movies
           for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
-            movie_indices = self.find_movies_by_title(movie[1:-1]) # try to find that movie in the database
+            movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
             if len(movie_indices) == 0: # the movie was not found
-              responses.append("{} is not a valid movie.".format(movie[1:-1]))
+              responses.append("{} is not a valid movie.".format(movie))
             elif len(movie_indices) > 1: # the movie matches multiple options
-              responses.append("Please be more specific about the movie title \"{}\".".format(movie[1:-1]))
+              responses.append("Please be more specific about the movie title \"{}\".".format(movie))
             else: # add a response for that movie
-              responses.append(get_response_for_sentiment(movie[1:-1],sentiment))
-              self.user_sentiment[movie_indices[0]] = sentiment
+              responses.append(get_response_for_sentiment(movie,sentiment))
+              self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
           if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
             responses.append('\n' + random.choice(self.asking_for_more_responses))
           else:
             responses.append(add_reccomendations_to_response())
         else:
-          responses.append("{} is not a valid movie.".format(movies[0][1:-1]))
+          responses.append(random.choice(self.asking_for_more_responses))
         response = '\n'.join(responses)
 
       else:
@@ -332,8 +334,8 @@ class Chatbot:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
         text = re.sub(r'[^\w\s]', '', text)
         tokens = text.split(' ')
-        #gets substrings of the text input and tries to find movie titles that match
-        #if match is found, the title is added to the list
+        # gets substrings of the text input and tries to find movie titles that match
+        # if match is found, the title is added to the list
         for i in range(len(tokens), 0, -1):
           for j in range(i):
             test_tokens = tokens[j:i]
@@ -342,7 +344,7 @@ class Chatbot:
             if len(movie_search) > 0:
               titles.append(test_title)
               return list(set(titles))
-          
+
 
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
@@ -577,9 +579,9 @@ class Chatbot:
 
       def index_movies(text):
         index = {}
-        expression = r'(\".*?\")'
-        matches = re.findall(expression, text)
-        for i, match in enumerate(matches):
+        movies = self.extract_titles(text)
+        print('movies are', movies)
+        for i, match in enumerate(movies):
           id = ' __' + str(i) + '__ '
           index[id.strip()] = match
           text = text.replace(match, id)
@@ -632,30 +634,37 @@ class Chatbot:
       scores = dict()
       title = title.lower() #title user typed in
 
-      minimum = max_distance
+      minimum = max_distance #min starts at 3
       for i in range(len(self.titles)):
           database_title = self.titles[i][0].lower().split(' (')[0] #title from database
           #print(database_title)
-
           distance = nltk.edit_distance(title, database_title)
           #distance = nltk.edit_distance(title, "batman")
-          #print(distance)
 
           if distance <= minimum:
-            minimum = distance
-            indices = self.find_movies_by_title(database_title)
+            #print('I AM AERE')
+            minimum = distance #new minimum is set
+
+            #indices = self.find_movies_by_title(database_title)
 
             if distance not in scores:
               scores[distance] = []
-              for index in indices:
-                scores[distance].append(index)
+              #for index in indices:
+              scores[distance].append(i)
             else:
-              for index in indices:
-                if index not in scores[distance]:
-                  scores[distance].append(index)
+              #for index in indices:
+              if i not in scores[distance]:
+                  scores[distance].append(i)
 
-      if minimum in scores:
-        return scores[minimum]
+
+      localmin = minimum
+      for key in scores:
+        if(key <= localmin):
+          localmin = key
+
+      #print(scores)
+      if localmin in scores:
+        return scores[localmin]
       else:
         return []
 
@@ -685,7 +694,7 @@ class Chatbot:
 
       clarification_name = re.sub(r'[0-9]{4}', '', clarification)
       clarification_year = re.findall('([0-9]{4})', clarification)
-     
+
       stripped_clarification_name = re.sub(r'[^\w\s]', '', clarification_name)
       indices = []
       for c in candidates:
@@ -695,13 +704,13 @@ class Chatbot:
 
         stripped_movie_name = re.sub(r'[^\w\s]', '', movie_name)
         plausible = False
-    
+
         for y in clarification_year:
-          if y in movie_year: 
+          if y in movie_year:
             plausible = True
         if len(stripped_clarification_name) != 0 and stripped_clarification_name in stripped_movie_name:
           plausible = True
-        
+
         if plausible is True: indices.append(c)
       return indices
 
@@ -910,5 +919,4 @@ print(titles)
 #print('testing for movies closest to:')
 
 print(chatbot.find_movies_closest_to_title("BAT-MAAAN", max_distance = 3)) 
-
 
