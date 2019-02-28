@@ -131,6 +131,9 @@ class Chatbot:
       self.corrected_movie_index = []
       self.saved_sentiment = 0
 
+      self.asked_a_question = False
+      self.asked_about = None # should be a specific movie
+
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -215,7 +218,8 @@ class Chatbot:
         if sentiment == 1:
           return random.choice(self.positive_responses).format(movie)
         if sentiment == 0:
-          return random.choice(self.neutral_responses)
+          # return random.choice(self.neutral_responses)
+          return ''
         if sentiment == -1:
           return random.choice(self.negative_responses).format(movie)
         else:
@@ -243,13 +247,13 @@ class Chatbot:
           recommendation_responses.append("Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)")
         return '\n'.join(recommendation_responses)
 
-      if self.creative: #TODO: need to add spell-check, ect.
+      if self.creative:
         creative_mapper = {-2:-1,-1:-1,0:0,1:1,2:1}
         responses = []
 
 
         def spell_check():
-          if (len(self.corrected_movies) > 1):
+          if (len(self.corrected_movies) > 0):
             responses.append('Did you mean to type: ' + self.corrected_movies[0] + '?')
             self.user_was_corrected = True
             self.saved_sentiment = self.extract_sentiment(format(line))
@@ -257,7 +261,47 @@ class Chatbot:
             return True
           else:
             return False
-        
+
+        def get_movies_and_sentiments(text):
+          if "\"" in text:
+            movie_sentiments = self.extract_sentiment_for_movies(text)
+            movies = [pair[0] for pair in movie_sentiments]
+            if len(movies) == 1:
+              movies = self.extract_titles(text)
+              movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
+          else:
+            movies = self.extract_titles(text)
+            movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
+          return movies, movie_sentiments
+
+        if self.asked_a_question:
+          movies, movie_sentiments = get_movies_and_sentiments(line)
+          if len(movies) == 1:
+            movie_index = self.find_movies_by_title(movies[0])
+            if len(movie_index) != 0 and movie_index[0] == self.asked_about[1]:
+              sentiment = movie_sentiments[0][1]
+              responses.append(get_response_for_sentiment(get_movie_title(movie_index[0]),sentiment))
+              if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
+                responses.append(random.choice(self.asking_for_more_responses))
+              else:
+                responses.append(add_reccomendations_to_response())
+              self.asked_a_question = False
+              self.asked_about = None
+              return '\n'.join(responses)
+          elif len(movies) == 0:
+            sentiment = self.extract_sentiment(line)
+            self.user_sentiment[self.asked_about[1]] = creative_mapper[sentiment]
+            responses.append(get_response_for_sentiment(get_movie_title(self.asked_about[1]),sentiment))
+            if np.count_nonzero(self.user_sentiment) < 5:  # check to see if ready for recommendations
+              responses.append(random.choice(self.asking_for_more_responses))
+            else:
+              responses.append(add_reccomendations_to_response())
+            self.asked_a_question = False
+            self.asked_about = None
+            return '\n'.join(responses)
+          self.asked_a_question = False
+          self.asked_about = None
+
 
         #user was corrected and said 'yes to the corrected movie'
         if (line.lower() in self.agreement_words):
@@ -300,21 +344,19 @@ class Chatbot:
             responses.append("To which of these are you referring?")
             self.mult_movie_options = possible_movies
         
-        else: 
-        
-          movie_sentiments = self.extract_sentiment_for_movies(line)
-          movies = [pair[0] for pair in movie_sentiments]
-          #print(movies)
-          # exit(1)
-          #print(self.corrected_movies)
+        else:
+          movies, movie_sentiments = get_movies_and_sentiments(line)
+
           if len(movies) > 0: # respond to each of the movies
             for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
               movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
-              #print(movie,movie_indices)
               if len(movie_indices) == 0: # the movie was not found
-                #print('welp')
                 if not spell_check():
                   responses.append("{} is not a valid movie.".format(movie))
+              elif len(movie_indices) == 1 and sentiment == 0:
+                responses.append("How do you feel about the movie {}?".format(movie))
+                self.asked_a_question = True
+                self.asked_about = (movie,movie_indices[0])
               elif len(movie_indices) > 1: # the movie matches multiple options
                 responses.append("I found several movies with the name \"{}\":".format(movie))
                 for i in movie_indices:
@@ -323,12 +365,14 @@ class Chatbot:
                 self.saved_sentiment = sentiment
                 self.mult_movie_options = movie_indices
               else: # add a response for that movie
+                # print(movie_indices)
                 responses.append(get_response_for_sentiment(get_movie_title(movie_indices[0]),sentiment))
                 self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
-            if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
-              responses.append(random.choice(self.asking_for_more_responses))
-            else:
-              responses.append(add_reccomendations_to_response())
+            if not self.asked_a_question:
+              if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
+                responses.append(random.choice(self.asking_for_more_responses))
+              else:
+                responses.append(add_reccomendations_to_response())
           else:
             if not spell_check():
               responses.append("I do not understand.")
@@ -687,9 +731,12 @@ class Chatbot:
 
       def index_movies(text):
         index = {}
-        movies = self.extract_titles(text)
+        # movies = self.extract_titles(text)
+        expression = r'(\".*?\")'
+        movies = re.findall(expression, text)
         #print('movies are', movies)
         for i, match in enumerate(movies):
+          match = match.replace('\"','')
           id = ' __' + str(i) + '__ '
           index[id.strip()] = match
           text = text.replace(match, id)
@@ -702,11 +749,6 @@ class Chatbot:
       text = re.sub(self.clause_negation,self.INFLECT,text)
       phrases = re.split(self.sentence_inflection_splitters,text)
       #TODO: two complete thoughts with and
-      # new_phrases = []
-      # for phrase in phrases:
-      #   if 'and' in phrase:
-      #     phrase = phrase.split('and')
-      #   if 'and' in phrase and ('__' not in phrase or len(nltk.word_tokenize(phrase)) == 1):
 
       if len(phrases) > 1 and ('__' not in phrases[1] or len(nltk.word_tokenize(phrases[1])) == 1):
         phrases = [text]
