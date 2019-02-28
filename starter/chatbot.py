@@ -59,7 +59,7 @@ class Chatbot:
       self.clause_negation = r'but not|and not|although not|though not|even though not|even if not'
       self.INFLECT = '__inflect__'
       self.sentence_inflection_splitters = r'but|although|because|since|though|even though|even if'
-      self.agreement_words = ['yes', 'yeah', 'yup', 'mhm', 'mhmm', 'yep', 'yuh', 'yah', 'ya', 'y', 'of course', 'duh', 'mhmmm']
+      self.agreement_words = ['yes', 'yeah', 'yup', 'mhm', 'mhmm', 'yep', 'yuh', 'yah', 'ya', 'y', 'of course', 'duh', 'mhmmm', 'ok', 'okey-dokey', 'affirmative', 'uh-huh', 'yuppers', 'very well', 'ja', 'sure', 'yessir']
       self.affirmation_words = ['Great', 'Awesome', 'Sounds good', 'Gotcha']
       self.sent_words = ['liked', 'loved', 'like', 'enjoy', 'love', 'is', 'are']
       #############################################################################
