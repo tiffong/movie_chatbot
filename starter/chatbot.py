@@ -234,20 +234,20 @@ class Chatbot:
       def add_reccomendations_to_response(): #TODO: maybe clean this up and use it for the simple as well
         recommendation_responses = []
         recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=True)
-        recommended_movies = []
-        for i in range(len(recommendation)):
-          movie_title = self.titles[recommendation[i]][0]
-          movie_title = movie_title.split(' (')[0]
-          recommended_movies.append(movie_title)
+        # recommended_movies = []
+        # for i in range(len(recommendation)):
+        #   movie_title = self.titles[recommendation[i]][0]
+        #   movie_title = movie_title.split(' (')[0]
+        #   recommended_movies.append(movie_title)
         num = random.randint(0, 6)
         # num = 5
 
         if num < 3:  # give one movie recommendation
           recommendation_responses.append(random.choice(self.announcing_recommendation_responses))
-          recommendation_responses.append(random.choice(self.recommendation_templates).replace('{}', recommended_movies[0]))
+          recommendation_responses.append(random.choice(self.recommendation_templates).replace('{}', get_movie_title(recommendation[0])))
           recommendation_responses.append("Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)")
         else:  # give three movie recommendations
-          movies_list = "\"{}\",\"{}\",\"{}\".".format(recommended_movies[0],recommended_movies[1],recommended_movies[2])
+          movies_list = "\"{}\",\"{}\",\"{}\".".format(get_movie_title(recommendation[0]),get_movie_title(recommendation[1]),get_movie_title(recommendation[2]))
           recommendation_responses.append(random.choice(self.announcing_recommendation_responses_multiple))
           recommendation_responses.append(random.choice(self.recommendation_multiple_movies).replace('{}', movies_list))
           recommendation_responses.append("Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)")
@@ -343,11 +343,14 @@ class Chatbot:
           possible_movies = self.disambiguate(line, self.mult_movie_options)
           if len(possible_movies) == 1:
             responses.append(get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment))
-            responses.append(random.choice(self.asking_for_more_responses))
             self.user_sentiment[possible_movies[0]] = creative_mapper[self.saved_sentiment]
             self.saved_sentiment = 0
             self.mult_movie_options = []
             self.disambiguate_on = False
+            if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
+              responses.append(random.choice(self.asking_for_more_responses))
+            else:
+              responses.append(add_reccomendations_to_response())
           else: #continue to disambiguate if more than one movie is possible
             responses.append("Based on your response, I narrowed it down to " + str(len(self.mult_movie_options)) + " movies:")
             for i in possible_movies:
