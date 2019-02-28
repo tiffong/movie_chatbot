@@ -74,7 +74,8 @@ class Chatbot:
                                        "I am happy that you enjoyed \"{}\" so much.",
                                        "You really liked \"{}\".",
                                        "\"{}\" was REALLY good to you. Nice.",
-                                       "You think that \"{}\" was excellent!"]
+                                       "You think that \"{}\" was excellent!",
+                                       "Good to know you think that \"{}\" was amazing!"]
       self.positive_responses = ["I am glad you liked \"{}\".",
                                  "So you enjoyed the film \"{}\".",
                                  "So you enjoyed the movie \"{}\". Good to know.",
@@ -98,12 +99,14 @@ class Chatbot:
                              "You don't want to see any films like \"{}\" because that movie was AWFUL."]
       self.neutral_responses = ["Sorry. I did not get that.",
                                 "I did not understand.",
-                                "I could not make out what you meant by that."]
+                                "I could not make out what you meant by that.",
+                                "I don't understand what you mean."]
       self.asking_for_more_responses = ["Tell me your opinion on another film.",
                                         "What is another film you liked or disliked?",
                                         "Can you give me another movie?",
                                         "I need another one of your film preferences.",
-                                        "Can you describe to me another of your movie reactions?"]
+                                        "Can you describe to me another of your movie reactions?",
+                                        "Tell me about another film you've seen."]
       self.announcing_recommendation_responses = ["I have enough information to give you a recommendation.",
                                                   "That's enough movies for me to recommend to you a new one.",
                                                   "I can now recommend a new movie for you.",
@@ -267,15 +270,19 @@ class Chatbot:
             return False
 
         def get_movies_and_sentiments(text):
-          if "\"" in text:
-            movie_sentiments = self.extract_sentiment_for_movies(text)
-            movies = [pair[0] for pair in movie_sentiments]
-            if len(movies) == 1:
-              movies = self.extract_titles(text)
-              movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
-          else:
-            movies = self.extract_titles(text)
-            movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
+          # if "\"" in text:
+          #   movie_sentiments = self.extract_sentiment_for_movies(text)
+          #   movies = [pair[0] for pair in movie_sentiments]
+          #   if len(movies) == 1:
+          #     movies = self.extract_titles(text)
+          #     movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
+          # else:
+          #   movies = self.extract_titles(text)
+          #   movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
+          # return movies, movie_sentiments
+          movie_sentiments = self.extract_sentiment_for_movies(text)
+          movies = [pair[0] for pair in movie_sentiments]
+          print('movies: ', movie_sentiments)
           return movies, movie_sentiments
 
         if self.asked_a_question:
@@ -336,7 +343,6 @@ class Chatbot:
         elif len(self.mult_movie_options) > 0: #disambiguate the movie options
           possible_movies = self.disambiguate(line, self.mult_movie_options)
           if len(possible_movies) == 1:
-            this_response = get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment)
             responses.append(get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment))
             responses.append(random.choice(self.asking_for_more_responses))
             self.user_sentiment[possible_movies[0]] = creative_mapper[self.saved_sentiment]
@@ -500,7 +506,6 @@ class Chatbot:
       titles = []
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
-        if len(titles) > 0: return titles
         text = re.sub(r'[^\w\s]', '', text)
         tokens = text.split(' ')
         # gets substrings of the text input and tries to find movie titles that match
@@ -742,8 +747,9 @@ class Chatbot:
       def index_movies(text):
         index = {}
         # movies = self.extract_titles(text)
-        expression = r'(\".*?\")'
-        movies = re.findall(expression, text)
+        # expression = r'(\".*?\")'
+        # movies = re.findall(expression, text)
+        movies = self.extract_titles(text)
         #print('movies are', movies)
         for i, match in enumerate(movies):
           match = match.replace('\"','')
