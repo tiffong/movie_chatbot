@@ -136,7 +136,7 @@ class Chatbot:
 
       self.asked_a_question = False
       self.asked_about = None # should be a specific movie
-      self.disambiguate = False
+      self.disambiguate_on = False
 
       # User sentiment code
       self.detector = user_emotion.EmotionDetector()
@@ -348,7 +348,7 @@ class Chatbot:
             self.user_sentiment[possible_movies[0]] = creative_mapper[self.saved_sentiment]
             self.saved_sentiment = 0
             self.mult_movie_options = []
-            self.disambiguate = False
+            self.disambiguate_on = False
           else: #continue to disambiguate if more than one movie is possible
             responses.append("Based on your response, I narrowed it down to " + str(len(self.mult_movie_options)) + " movies:")
             for i in possible_movies:
@@ -376,12 +376,12 @@ class Chatbot:
                 responses.append('To which of these films are you referring?')
                 self.saved_sentiment = sentiment
                 self.mult_movie_options = movie_indices
-                self.disambiguate = True
+                self.disambiguate_on = True
               else: # add a response for that movie
                 # print(movie_indices)
                 responses.append(get_response_for_sentiment(get_movie_title(movie_indices[0]),sentiment))
                 self.user_sentiment[movie_indices[0]] = creative_mapper[sentiment]
-            if not self.asked_a_question and not self.disambiguate:
+            if not self.asked_a_question and not self.disambiguate_on:
               if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
                 responses.append(random.choice(self.asking_for_more_responses))
               else:
