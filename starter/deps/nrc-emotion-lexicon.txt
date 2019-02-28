@@ -109268,6 +109268,16 @@ sacrifices	positive	0
 sacrifices	sadness	1
 sacrifices	surprise	0
 sacrifices	trust	0
+sad	anger	0
+sad	anticipation	0
+sad	disgust	0
+sad	fear	0
+sad	joy	0
+sad	negative	0
+sad	positive	0
+sad	sadness	1
+sad	surprise	0
+sad	trust	0
 saddle	anger	0
 saddle	anticipation	0
 saddle	disgust	0
