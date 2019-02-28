@@ -89,11 +89,11 @@ class EmotionDetector():
 		return response
 		
 
-detector = EmotionDetector()
-detector.read_lexicon("deps/nrc-emotion-lexicon.txt")
-line = input("Type in a line, and I'll respond based on how you're doing.\n")
-while line != ':quit':
-	response = detector.extract_emotion(line)
-	print(response)
-	line = input("Type in a line, and I'll respond based on how you're doing.\n")
-print("Have a nice day!")
+# detector = EmotionDetector()
+# detector.read_lexicon("deps/nrc-emotion-lexicon.txt")
+# line = input("Type in a line, and I'll respond based on how you're doing.\n")
+# while line != ':quit':
+# 	response = detector.extract_emotion(line)
+# 	print(response)
+# 	line = input("Type in a line, and I'll respond based on how you're doing.\n")
+# print("Have a nice day!")

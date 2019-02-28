@@ -3,7 +3,7 @@
 # Original Python code by Ignacio Cases (@cases)
 ######################################################################
 import movielens
-
+import user_emotion
 import numpy as np
 import re
 from PorterStemmer import PorterStemmer
@@ -130,6 +130,10 @@ class Chatbot:
       self.typed_yes = False
       self.corrected_movie_index = []
       self.saved_sentiment = 0
+
+      # User sentiment code
+      self.detector = user_emotion.EmotionDetector()
+      self.detector.read_lexicon("deps/nrc-emotion-lexicon.txt")
 
 
       #############################################################################
@@ -333,6 +337,8 @@ class Chatbot:
             if not spell_check():
               responses.append("I do not understand.")
               responses.append(random.choice(self.asking_for_more_responses))
+            emotion_response = self.detector.extract_emotion(line)
+            responses.append(emotion_response)
         response = '\n'.join(responses)
       
       else: #standard mode
