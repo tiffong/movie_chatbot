@@ -74,7 +74,8 @@ class Chatbot:
                                        "I am happy that you enjoyed \"{}\" so much.",
                                        "You really liked \"{}\".",
                                        "\"{}\" was REALLY good to you. Nice.",
-                                       "You think that \"{}\" was excellent!"]
+                                       "You think that \"{}\" was excellent!",
+                                       "Good to know you think that \"{}\" was amazing!"]
       self.positive_responses = ["I am glad you liked \"{}\".",
                                  "So you enjoyed the film \"{}\".",
                                  "So you enjoyed the movie \"{}\". Good to know.",
@@ -98,12 +99,14 @@ class Chatbot:
                              "You don't want to see any films like \"{}\" because that movie was AWFUL."]
       self.neutral_responses = ["Sorry. I did not get that.",
                                 "I did not understand.",
-                                "I could not make out what you meant by that."]
+                                "I could not make out what you meant by that.",
+                                "I don't understand what you mean."]
       self.asking_for_more_responses = ["Tell me your opinion on another film.",
                                         "What is another film you liked or disliked?",
                                         "Can you give me another movie?",
                                         "I need another one of your film preferences.",
-                                        "Can you describe to me another of your movie reactions?"]
+                                        "Can you describe to me another of your movie reactions?",
+                                        "Tell me about another film you've seen."]
       self.announcing_recommendation_responses = ["I have enough information to give you a recommendation.",
                                                   "That's enough movies for me to recommend to you a new one.",
                                                   "I can now recommend a new movie for you.",
