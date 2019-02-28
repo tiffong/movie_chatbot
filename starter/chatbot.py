@@ -381,7 +381,6 @@ class Chatbot:
         # gets substrings of the text input and tries to find movie titles that match
         # if match is found, the title is added to the list
         for i in range(len(tokens), 0, -1):
-          print(titles)
           #print(titles)
           for j in range(i):
             test_tokens = tokens[j:i]
