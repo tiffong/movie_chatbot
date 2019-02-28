@@ -338,7 +338,9 @@ class Chatbot:
         elif len(self.mult_movie_options) > 0: #disambiguate the movie options
           possible_movies = self.disambiguate(line, self.mult_movie_options)
           if len(possible_movies) == 1:
+            this_response = get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment)
             responses.append(get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment))
+            print(this_response)
             responses.append(random.choice(self.asking_for_more_responses))
             self.user_sentiment[possible_movies[0]] = creative_mapper[self.saved_sentiment]
             self.saved_sentiment = 0
@@ -499,6 +501,7 @@ class Chatbot:
       titles = []
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
+        if len(titles) > 0: return titles
         text = re.sub(r'[^\w\s]', '', text)
         tokens = text.split(' ')
         # gets substrings of the text input and tries to find movie titles that match
