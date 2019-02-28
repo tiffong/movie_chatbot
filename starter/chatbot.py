@@ -138,7 +138,7 @@ class Chatbot:
       self.disambiguate_on = False
 
       # User sentiment code
-      self.detector = user_emotion.EmotionDetector()
+      self.detector = EmotionDetector()
       self.detector.read_lexicon("deps/nrc-emotion-lexicon.txt")
 
       #############################################################################
