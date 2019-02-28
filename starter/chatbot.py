@@ -266,15 +266,19 @@ class Chatbot:
             return False
 
         def get_movies_and_sentiments(text):
-          if "\"" in text:
-            movie_sentiments = self.extract_sentiment_for_movies(text)
-            movies = [pair[0] for pair in movie_sentiments]
-            if len(movies) == 1:
-              movies = self.extract_titles(text)
-              movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
-          else:
-            movies = self.extract_titles(text)
-            movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
+          # if "\"" in text:
+          #   movie_sentiments = self.extract_sentiment_for_movies(text)
+          #   movies = [pair[0] for pair in movie_sentiments]
+          #   if len(movies) == 1:
+          #     movies = self.extract_titles(text)
+          #     movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
+          # else:
+          #   movies = self.extract_titles(text)
+          #   movie_sentiments = [(film, self.extract_sentiment(text)) for film in movies]
+          # return movies, movie_sentiments
+          movie_sentiments = self.extract_sentiment_for_movies(text)
+          movies = [pair[0] for pair in movie_sentiments]
+          print('movies: ', movie_sentiments)
           return movies, movie_sentiments
 
         if self.asked_a_question:
@@ -335,9 +339,7 @@ class Chatbot:
         elif len(self.mult_movie_options) > 0: #disambiguate the movie options
           possible_movies = self.disambiguate(line, self.mult_movie_options)
           if len(possible_movies) == 1:
-            this_response = get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment)
             responses.append(get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment))
-            print(this_response)
             responses.append(random.choice(self.asking_for_more_responses))
             self.user_sentiment[possible_movies[0]] = creative_mapper[self.saved_sentiment]
             self.saved_sentiment = 0
@@ -498,7 +500,6 @@ class Chatbot:
       titles = []
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
-        if len(titles) > 0: return titles
         text = re.sub(r'[^\w\s]', '', text)
         tokens = text.split(' ')
         # gets substrings of the text input and tries to find movie titles that match
@@ -740,8 +741,9 @@ class Chatbot:
       def index_movies(text):
         index = {}
         # movies = self.extract_titles(text)
-        expression = r'(\".*?\")'
-        movies = re.findall(expression, text)
+        # expression = r'(\".*?\")'
+        # movies = re.findall(expression, text)
+        movies = self.extract_titles(text)
         #print('movies are', movies)
         for i, match in enumerate(movies):
           match = match.replace('\"','')
