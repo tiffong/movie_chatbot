@@ -74,7 +74,8 @@ class Chatbot:
                                        "You really liked \"{}\".",
                                        "\"{}\" was REALLY good to you. Nice.",
                                        "You think that \"{}\" was excellent!",
-                                       "Good to know you think that \"{}\" was amazing!"]
+                                       "Good to know you think that \"{}\" was amazing!",
+                                       "It's great that you loved \"{}\""]
       self.positive_responses = ["I am glad you liked \"{}\".",
                                  "So you enjoyed the film \"{}\".",
                                  "So you enjoyed the movie \"{}\". Good to know.",
@@ -281,7 +282,7 @@ class Chatbot:
           # return movies, movie_sentiments
           movie_sentiments = self.extract_sentiment_for_movies(text)
           movies = [pair[0] for pair in movie_sentiments]
-          print('movies: ', movie_sentiments)
+          #print('movies: ', movie_sentiments)
           return movies, movie_sentiments
 
         if self.asked_a_question:
