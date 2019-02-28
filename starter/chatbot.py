@@ -269,11 +269,13 @@ class Chatbot:
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
+          self.corrected_movie_index = []
         elif (self.user_was_corrected and not self.typed_yes):
           response = 'No worries. Tell me about a film you have watched.'          
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
+          self.corrected_movie_index = []
 
         elif len(self.mult_movie_options) > 0: #disambiguate the movie options
           possible_movies = self.disambiguate(line, self.mult_movie_options)
@@ -290,7 +292,7 @@ class Chatbot:
             responses.append("To which of these are you referring?")
             self.mult_movie_options = possible_movies
         
-        else: #if their response has nothing to do with the system
+        else: 
         
           movie_sentiments = self.extract_sentiment_for_movies(line)
           movies = [pair[0] for pair in movie_sentiments]
@@ -324,7 +326,8 @@ class Chatbot:
               responses.append("I do not understand.")
               responses.append(random.choice(self.asking_for_more_responses))
         response = '\n'.join(responses)
-      else:
+      
+      else: #standard mode
 
         #the movies that the user inputted
         movies = self.extract_titles(format(line))
@@ -454,7 +457,13 @@ class Chatbot:
               if len(spellcheck) >= 1 and len(self.corrected_movies) < 2:
                 for i in range(len(spellcheck)):
                   ind = spellcheck[i]
-                  movie = self.titles[ind][0]
+                  movie = self.titles[ind][0][:-7]
+                  title_split = movie.split(', ') #for alternate titles that have 'terminal, the' format
+                  #print(title_split)
+                  if(len(title_split) > 1):
+                    if (title_split[1].lower() in self.articles):
+                      movie = title_split[1] + ' ' + title_split[0] #eg 'the hunt'
+                      #print(movie)
                   if (len(self.corrected_movies) < 2):
                     self.corrected_movies.append(movie)
                     self.corrected_movie_index.append(ind)
