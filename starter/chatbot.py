@@ -3,7 +3,7 @@
 # Original Python code by Ignacio Cases (@cases)
 ######################################################################
 import movielens
-
+import user_emotion
 import numpy as np
 import re
 from PorterStemmer import PorterStemmer
@@ -134,6 +134,9 @@ class Chatbot:
       self.asked_a_question = False
       self.asked_about = None # should be a specific movie
 
+      # User sentiment code
+      self.detector = user_emotion.EmotionDetector()
+      self.detector.read_lexicon("deps/nrc-emotion-lexicon.txt")
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -323,7 +326,7 @@ class Chatbot:
           self.corrected_movie_index = []
         elif (self.user_was_corrected and not self.typed_yes):
           #print('here')
-          responses.append('No worries. Tell me about a film you have watched.')        
+          responses.append('No worries. Tell me about a film you have watched.')
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
@@ -343,7 +346,7 @@ class Chatbot:
               responses.append(self.titles[i][0])
             responses.append("To which of these are you referring?")
             self.mult_movie_options = possible_movies
-        
+
         else:
           movies, movie_sentiments = get_movies_and_sentiments(line)
 
@@ -377,8 +380,10 @@ class Chatbot:
             if not spell_check():
               responses.append("I do not understand.")
               responses.append(random.choice(self.asking_for_more_responses))
+            emotion_response = self.detector.extract_emotion(line)
+            responses.append(emotion_response)
         response = '\n'.join(responses)
-      
+
       else: #standard mode
 
         #the movies that the user inputted
@@ -787,7 +792,7 @@ class Chatbot:
       minimum = max_distance #min starts at 3
       for i in range(len(self.titles)):
           database_title = self.titles[i][0].lower().split(' (')[0] #title from database
-          
+
           title_split = database_title.split(', ')
           if(len(title_split) > 1 and title_split[1] in self.articles):
             database_title = title_split[1] + ' ' + title_split[0]
@@ -1054,7 +1059,7 @@ class Chatbot:
       can do and how the user can interact with it.
       """
       return """
-      This is a MovieBot designed to help you find a movie to watch! 
+      This is a MovieBot designed to help you find a movie to watch!
       """
 
 
@@ -1070,5 +1075,4 @@ chatbot = Chatbot(True)
 # indices = chatbot.find_movies_by_title('the terminal')
 #print('testing for movies closest to:')
 
-#print(chatbot.find_movies_closest_to_title("the notebok")) 
-
+#print(chatbot.find_movies_closest_to_title("the notebok"))
