@@ -60,7 +60,8 @@ class Chatbot:
       self.INFLECT = '__inflect__'
       self.sentence_inflection_splitters = r'but|although|because|since|though|even though|even if'
       self.agreement_words = ['yes', 'yeah', 'yup', 'mhm', 'mhmm', 'yep', 'yuh', 'yah', 'ya', 'y', 'of course', 'duh', 'mhmmm']
-
+      self.affirmation_words = ['Great', 'Awesome', 'Sounds good', 'Gotcha']
+      self.sent_words = ['liked', 'loved', 'like', 'enjoy', 'love', 'is', 'are']
       #############################################################################
       # TODO: Binarize the movie ratings matrix.                                  #
       #############################################################################
@@ -99,7 +100,7 @@ class Chatbot:
                                 "I did not understand.",
                                 "I could not make out what you meant by that."]
       self.asking_for_more_responses = ["Tell me your opinion on another film.",
-                                        "What is a another film you liked or disliked?",
+                                        "What is another film you liked or disliked?",
                                         "Can you give me another movie?",
                                         "I need another one of your film preferences.",
                                         "Can you describe to me another of your movie reactions?"]
@@ -262,8 +263,14 @@ class Chatbot:
         if (line.lower() in self.agreement_words):
           self.typed_yes = True
         if (self.user_was_corrected and self.typed_yes):
-          responses.append('Great. You meant: ' + self.corrected_movies[0] + '. I added your review to my system. Tell me about another movie.')
+          responses.append('Great. You meant: ' + self.corrected_movies[0] + '. I added your review to my system.')
           self.user_sentiment[self.corrected_movie_index[0]] = self.saved_sentiment
+
+          if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
+              responses.append(random.choice(self.asking_for_more_responses))
+          else:
+            responses.append(add_reccomendations_to_response())
+          #if user has typed in more than 5 movie recommendations...
 
           self.typed_yes = False
           self.saved_sentiment = 0
@@ -271,7 +278,8 @@ class Chatbot:
           self.user_was_corrected = False
           self.corrected_movie_index = []
         elif (self.user_was_corrected and not self.typed_yes):
-          response = 'No worries. Tell me about a film you have watched.'          
+          #print('here')
+          responses.append('No worries. Tell me about a film you have watched.')        
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
           self.user_was_corrected = False
@@ -447,14 +455,16 @@ class Chatbot:
           for j in range(i):
             test_tokens = tokens[j:i]
             test_title = ' '.join(test_tokens)
-            if test_title.lower() in self.articles or test_title == '' or test_title.lower() in self.agreement_words:  # so it doesnt return I or the as titles
+            if test_title.lower() in self.articles or test_title == '' or test_title.lower() in self.agreement_words or test_title.lower() in self.sent_words:  # so it doesnt return I or the as titles
               continue
             movie_search = self.find_exact_title(test_title)
             if len(movie_search) > 0:
               titles.append(test_title)
             elif len(movie_search) == 0:
+              #print(test_title)
               spellcheck = self.find_movies_closest_to_title(test_title, max_distance=2)
               if len(spellcheck) >= 1 and len(self.corrected_movies) < 2:
+                #print(test_title)
                 for i in range(len(spellcheck)):
                   ind = spellcheck[i]
                   movie = self.titles[ind][0][:-7]
