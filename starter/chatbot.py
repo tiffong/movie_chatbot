@@ -127,7 +127,7 @@ class Chatbot:
       self.corrected_movies = []
       self.user_was_corrected = False
       self.typed_yes = False
-      self.prev_line = ''
+      self.corrected_movie_index = []
       self.saved_sentiment = 0
 
 
@@ -262,9 +262,9 @@ class Chatbot:
         if (line.lower() in self.agreement_words):
           self.typed_yes = True
         if (self.user_was_corrected and self.typed_yes):
-          #print('yuh!!!!!!!')
-          #self.user_sentiment[self.corrected_movies[0][0]] = self.saved_sentiment
-          responses.append('Great. I added your review to my system. Tell me about another movie.')
+          responses.append('Great. You meant: ' + self.corrected_movies[0] + '. I added your review to my system. Tell me about another movie.')
+          self.user_sentiment[self.corrected_movie_index[0]] = self.saved_sentiment
+
           self.typed_yes = False
           self.saved_sentiment = 0
           self.corrected_movies = [] #reset corrected movies list
@@ -444,7 +444,7 @@ class Chatbot:
           for j in range(i):
             test_tokens = tokens[j:i]
             test_title = ' '.join(test_tokens)
-            if test_title.lower() in self.articles or test_title == '' or test_title == 'yes':  # so it doesnt return I or the as titles
+            if test_title.lower() in self.articles or test_title == '' or test_title.lower() in self.agreement_words:  # so it doesnt return I or the as titles
               continue
             movie_search = self.find_exact_title(test_title)
             if len(movie_search) > 0:
@@ -457,6 +457,7 @@ class Chatbot:
                   movie = self.titles[ind][0]
                   if (len(self.corrected_movies) < 2):
                     self.corrected_movies.append(movie)
+                    self.corrected_movie_index.append(ind)
       else:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
       return titles
