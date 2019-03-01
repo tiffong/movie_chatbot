@@ -390,11 +390,12 @@ class Chatbot:
               else:
                 responses.append(add_reccomendations_to_response())
           else:
-            if not spell_check():
+            emotion_response = self.detector.extract_emotion(line)
+            if len(emotion_response) != 0:
+              responses.append(emotion_response)
+            elif not spell_check():
               responses.append("I do not understand.")
               responses.append(random.choice(self.asking_for_more_responses))
-            emotion_response = self.detector.extract_emotion(line)
-            responses.append(emotion_response)
         response = '\n'.join(responses)
 
       else: #standard mode
