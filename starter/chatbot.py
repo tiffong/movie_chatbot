@@ -27,6 +27,8 @@ class Chatbot:
       # The values stored in each row i and column j is the rating for
       # movie i by user j
       self.titles, ratings = movielens.ratings()
+      self.genre_map = self.sort_movies_by_genre(self.titles)
+
       self.articles = ['a', 'an', 'the',
       'die', 'le', 'la', 'il', 'elle', 'l', 'un',
       'los', 'les', 'das', 'i', 'lo'
@@ -221,6 +223,21 @@ class Chatbot:
           movie_title = movie_title[:-1]
         return movie_title
 
+      def get_emotion_movie_response(emotion, index):
+        title = get_movie_title(index)
+        response = ''
+        if emotion == 'fear' or emotion == 'sadness':
+          response = 'I recommend watching "' + title + '" for good vibes!'
+        elif emotion == 'anger':
+          response = 'Maybe watch "' + title + '" to let off some steam.'
+        elif emotion == 'joy':
+          response = 'Watch "' + title + '" for some happy childhood memories!'
+        elif emotion == 'disgust':
+          response = 'I recommend watching "' + title + '" for clean action and no gooey emotions!'
+        else:
+          response = 'Wanna be even more shocked? Watch "' + title + '" for some unexpected jumpscares!'
+        return response
+
       def get_response_for_sentiment(movie,sentiment):
         if sentiment == 2:
           return random.choice(self.super_positive_responses).format(movie)
@@ -237,11 +254,6 @@ class Chatbot:
       def add_reccomendations_to_response():
         recommendation_responses = []
         recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=True)
-        # recommended_movies = []
-        # for i in range(len(recommendation)):
-        #   movie_title = self.titles[recommendation[i]][0]
-        #   movie_title = movie_title.split(' (')[0]
-        #   recommended_movies.append(movie_title)
         num = random.randint(0, 6)
         # num = 5
 
@@ -339,7 +351,9 @@ class Chatbot:
         elif len(self.mult_movie_options) > 0: #disambiguate the movie options
           possible_movies = self.disambiguate(line, self.mult_movie_options)
           if len(possible_movies) == 1:
-            responses.append(get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment))
+            this_response = get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment)
+            if len(this_response) != 0:
+              responses.append(this_response)
             self.user_sentiment[possible_movies[0]] = creative_mapper[self.saved_sentiment]
             self.last_sentiment = self.saved_sentiment
             self.saved_sentiment = 0
@@ -352,7 +366,7 @@ class Chatbot:
           else: #continue to disambiguate if more than one movie is possible
             responses.append("Based on your response, I narrowed it down to " + str(len(self.mult_movie_options)) + " movies:")
             for i in possible_movies:
-              responses.append(self.titles[i][0])
+              responses.append(self.mult_movie_options[i][0])
             responses.append("To which of these are you referring?")
             self.mult_movie_options = possible_movies
 
@@ -403,14 +417,15 @@ class Chatbot:
               else:
                 responses.append(add_reccomendations_to_response())
           else:
-            emotion_response = self.detector.extract_emotion(line)
+            emotion_response, emotion = self.detector.extract_emotion(line)
             if len(emotion_response) != 0:
+              print(emotion_response)
               responses.append(emotion_response)
+              emotion_movie = self.recommend_emotion_movie(emotion)
+              responses.append(get_emotion_movie_response(emotion, emotion_movie))
             elif not spell_check():
               responses.append("I do not understand.")
               responses.append(random.choice(self.asking_for_more_responses))
-            emotion_response = self.detector.extract_emotion(line)
-            responses.append(emotion_response)
             self.last_sentiment = None
         response = '\n'.join(responses)
 
@@ -541,19 +556,15 @@ class Chatbot:
             if len(movie_search) > 0:
               titles.append(test_title)
             elif len(movie_search) == 0:
-              #print(test_title)
               spellcheck = self.find_movies_closest_to_title(test_title, max_distance=2)
               if len(spellcheck) >= 1 and len(self.corrected_movies) < 2:
-                #print(test_title)
                 for i in range(len(spellcheck)):
                   ind = spellcheck[i]
                   movie = self.titles[ind][0][:-7]
                   title_split = movie.split(', ') #for alternate titles that have 'terminal, the' format
-                  #print(title_split)
                   if(len(title_split) > 1):
                     if (title_split[1].lower() in self.articles):
                       movie = title_split[1] + ' ' + title_split[0] #eg 'the hunt'
-                      #print(movie)
                   if (len(self.corrected_movies) < 2):
                     self.corrected_movies.append(movie)
                     self.corrected_movie_index.append(ind)
@@ -600,12 +611,8 @@ class Chatbot:
                 break
 
           alternate_titles = curr_title.split(' (') #list of all alternate titles
-          #print(alternate_titles)
-          # if(len(alternate_titles)) == 2: #if it only has 1 title
-          #   if title == alternate_titles[0]:
-          #     indices.append(i)
 
-          #else: #if there are more than 1 valid title
+          #if there are more than 1 valid title
           for j in range(len(alternate_titles) - 1): #iterate through diff titles
             titles = re.findall(r'(?:a.k.a.\ )*([A-Za-z0-9 ()?!.\',:-]*)[\)]*', alternate_titles[j])
             #print(titles)
@@ -624,26 +631,18 @@ class Chatbot:
                 extracted_title = extracted_title[:-1]
 
               if (extracted_title == title and i not in indices):
-                #print(extracted_title)
                 indices.append(i)
 
               extracted_title_split = extracted_title.split(', ') #for alternate titles that have 'terminal, the' format
               if(len(extracted_title_split) > 1):
                 if (extracted_title_split[1] in self.articles):
-                  #print(title_split[1])
                   extracted_title = extracted_title_split[1] + ' ' + extracted_title_split[0] #eg 'the hunt'
                   if (extracted_title == title):
-                    #print(extracted_title)
                     indices.append(i)
 
       else: #if not in creative mode
         indices = self.find_exact_title(title)
       return indices
-
-    #TODO: write function that detects strong emotional language
-    #and returns a possible user emotion
-    def get_user_emotion(self, text):
-      pass
 
     def extract_sentiment(self, text): #TODO: combine creative and simple into cleaner version
       """Extract a sentiment rating from a line of text.
@@ -767,11 +766,7 @@ class Chatbot:
 
       def index_movies(text):
         index = {}
-        # movies = self.extract_titles(text)
-        # expression = r'(\".*?\")'
-        # movies = re.findall(expression, text)
         movies = self.extract_titles(text)
-        #print('movies are', movies)
         for i, match in enumerate(movies):
           match = match.replace('\"','')
           id = ' __' + str(i) + '__ '
@@ -828,16 +823,10 @@ class Chatbot:
           title_split = database_title.split(', ')
           if(len(title_split) > 1 and title_split[1] in self.articles):
             database_title = title_split[1] + ' ' + title_split[0]
-            #print(title_split[0], title_split[1])
-            #print(database_title)
           distance = nltk.edit_distance(title, database_title)
-          #distance = nltk.edit_distance(title, "batman")
 
           if distance <= minimum:
-            #print('I AM AERE')
             minimum = distance #new minimum is set
-
-            #indices = self.find_movies_by_title(database_title)
 
             if distance not in scores:
               scores[distance] = []
@@ -854,7 +843,6 @@ class Chatbot:
         if(key <= localmin):
           localmin = key
 
-      #print(scores)
       if localmin in scores:
         return scores[localmin]
       else:
@@ -906,6 +894,40 @@ class Chatbot:
         if plausible is True: indices.append(c)
       return indices
 
+    def sort_movies_by_genre(self, titles):
+      genre_map = {}
+      for i in range(len(titles)):
+        title = titles[i][0]
+        genres = titles[i][1]
+        genres = genres.split('|')
+        for g in genres:
+          if g in genre_map:
+            movie_list = genre_map[g]
+            movie_list.append(i)
+            genre_map[g] = movie_list
+          else:
+            genre_map[g] = [i]
+      return genre_map
+
+    def recommend_emotion_movie(self, emotion):
+      labels = ['anger', 'disgust', 'fear',
+              'joy', 'sadness',
+                'surprise']
+      movies_select = []
+      if emotion == 'fear' or emotion == 'sadness':
+        movies_select = self.genre_map['Comedy']
+      elif emotion == 'anger':
+        movies_select = self.genre_map['Crime']
+      elif emotion == 'joy':
+        movies_select == self.genre_map['Children']
+      elif emotion == 'disgust':
+        movies_select = self.genre_map['Action']
+      else:
+        movies_select = self.genre_map['Horror']
+      random_index = random.randint(0, len(movies_select) - 1)
+      return movies_select[random_index]
+
+        
 
     #############################################################################
     # 3. Movie Recommendation helper functions                                  #
@@ -930,21 +952,6 @@ class Chatbot:
 
       # The starter code returns a new matrix shaped like ratings but full of zeros.
       # binarized_ratings = np.zeros_like(ratings)
-
-      # for i in range(len(ratings)): #row
-      #   for j in range(len(ratings[0])): #column
-
-      #     value = 0
-      #     rating = ratings[i][j]
-
-      #     if(rating == 0):
-      #       value = 0
-      #     elif (rating > threshold):
-      #       value = 1
-      #     elif(rating <= threshold):
-      #       value = -1
-
-      #     binarized_ratings[i][j] = value
 
       binarized_ratings = np.array(ratings)
       binarized_ratings = np.where(binarized_ratings > threshold, 5, binarized_ratings)
@@ -1017,7 +1024,6 @@ class Chatbot:
 
       #for each movie i in the dataset
       num_movies = np.size(ratings_matrix,0)
-      #print(num_movies)
 
       #get index of movies that ARE rated by user
       watched = set()
@@ -1030,13 +1036,11 @@ class Chatbot:
 
       #rxi
       recommendation_ratings = np.zeros(num_movies)
-      #user_rxi_scores = np.zeros()
       rxi = 0
 
       #for each movie in the dataset
       for i in range(num_movies):
         movie_i = ratings_matrix[i] #ratings of all users for this movie
-        #print(movie_i)
 
         #for each rating the user gave
         for j in range(len(rating_index)):
@@ -1049,8 +1053,6 @@ class Chatbot:
           user_rating = user_ratings[user_movie_index]
 
           rxi += sim*user_rating
-        #print(rxi)
-        #print(i)
 
         if (i in watched):
           rxi = 0
@@ -1058,11 +1060,8 @@ class Chatbot:
         recommendation_ratings[i] = rxi #add the recommendation for that specific movie
         rxi = 0
 
-      #for movie in range(len(recommendation_ratings)):
       recommendations = np.argsort(recommendation_ratings)[-k:]
       reversed_arr = recommendations[::-1]
-      #print(type(recommendations))
-      #recommendations = np.flip(recommendations, k)
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -1092,6 +1091,12 @@ class Chatbot:
       """
       return """
       This is a MovieBot designed to help you find a movie to watch!
+      Creative mode features in process():
+      - understanding references to things said previously
+      - identifying and responding to emotions
+      - dialogue for spellchecking
+      - dialogue for disambiguation
+      - communicating sentiments and movies extracted
       """
 
 # This file contains the code used to build
@@ -1140,14 +1145,14 @@ class EmotionDetector():
   def get_response(self, matrix):
     matrix = np.array(matrix)
     if np.count_nonzero(matrix) == 0:
-      return ''
+      return '', ''
     max_val = np.amax(matrix)
     poss_emotions = []
     for i in range(len(matrix)):
       if matrix[i] == max_val: poss_emotions.append(self.emotions[i])
     if 'anger' in poss_emotions and 'fear' in poss_emotions:
-      return self.responses[self.emotions.index('fear')]
-    return self.responses[self.emotions.index(poss_emotions[0])]
+      return self.responses[self.emotions.index('fear')], 'fear'
+    return self.responses[self.emotions.index(poss_emotions[0])], poss_emotions[0]
 
 
   # Extracts the emotion from a given line
@@ -1162,16 +1167,8 @@ class EmotionDetector():
         for e in emotions:
           index = self.labels.index(e)
           scores[index] += 1
-    # sentiment = 0
-    # pos_index = self.labels.index('positive')
-    # neg_index = self.labels.index('negative')
-    # if scores[pos_index] > scores[neg_index]:
-    #   sentiment = 1
-    # elif scores[neg_index] > scores[pos_index]:
-    #   sentiment = -1
-    # emotion_matrix = scores[:neg_index] + scores[pos_index+1:]
-    response = self.get_response(scores)
-    return response
+    response, emotion = self.get_response(scores)
+    return response, emotion
 
 if __name__ == '__main__':
   print('To run your chatbot in an interactive loop from the command line, run:')

@@ -1489,3 +1489,8 @@ young	joy	1
 youth	anger	1
 youth	fear	1
 youth	surprise	1
+disgusted disgust 1
+gross disgust 1
+yuck disgust 1
+love joy 1
+hate anger 1
