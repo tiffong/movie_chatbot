@@ -315,9 +315,11 @@ class Chatbot:
 
 
         #user was corrected and said 'yes to the corrected movie'
+        self.typed_yes = False
         if (line.lower() in self.agreement_words):
           self.typed_yes = True
         if (self.user_was_corrected and self.typed_yes):
+          print(line)
           responses.append('Great. You meant: ' + self.corrected_movies[0] + '. I added your review to my system.')
           self.user_sentiment[self.corrected_movie_index[0]] = self.saved_sentiment
 
@@ -1084,20 +1086,19 @@ class EmotionDetector():
 
   def __init__(self):
     self.lexicon = {}
-    self.labels = ['anger', 'anticipation', 'disgust', 'fear',
-              'joy', 'negative', 'positive', 'sadness',
-                'surprise', 'trust']
+    self.labels = ['anger', 'disgust', 'fear',
+              'joy', 'sadness',
+                'surprise']
 
-    self.emotions = ['anger', 'anticipation', 'disgust', 'fear',
-              'joy','sadness', 'surprise', 'trust']
+    self.emotions = ['anger', 'disgust', 'fear',
+              'joy','sadness', 'surprise']
 
-    self.responses = ["You sound angry. Did I upset you?", "You sound excited! Are you looking forward to any movies?", 
+    self.responses = ["You sound angry. Did I upset you?",
               "You sound disgusted. Did I recommend something you don't like?", 
               "You sound afraid! Was my recommendation too spooky?", 
               "You sound happy! I hope I'm doing a good job so far.", 
               "You sound sad. Are you having a bad day?", 
-              "You sound surprised! Did I recommend something unexpected?", 
-              "You sound like you trust me! I'm glad we share the same taste in movies."]
+              "You sound surprised! Did I recommend something unexpected?"]
 
   # Reads in the lexicon given a filename
   # Currently geared towards the NRC Emotional Lexicon
@@ -1121,15 +1122,16 @@ class EmotionDetector():
 
   # Returns a response based on the sentiment and 
   # emotion matrix
-  def get_response(self, sentiment, matrix):
+  def get_response(self, matrix):
     matrix = np.array(matrix)
     if np.count_nonzero(matrix) == 0:
-      if sentiment < 0:
-        return "You sound upset. Did I hurt you?"
-      elif sentiment > 0:
-        return "You sound happy! I hope I'm doing a good job so far."
-      else:
-        return ""
+      return ''
+    #   if sentiment < 0:
+    #     return "You sound upset. Did I hurt you?"
+    #   elif sentiment > 0:
+    #     return "You sound happy! I hope I'm doing a good job so far."
+    #   else:
+    #     return ""
     # print(matrix)
     max_val = np.amax(matrix)
     poss_emotions = []
@@ -1152,15 +1154,15 @@ class EmotionDetector():
         for e in emotions:
           index = self.labels.index(e)
           scores[index] += 1
-    sentiment = 0
-    pos_index = self.labels.index('positive')
-    neg_index = self.labels.index('negative')
-    if scores[pos_index] > scores[neg_index]: 
-      sentiment = 1
-    elif scores[neg_index] > scores[pos_index]:
-      sentiment = -1
-    emotion_matrix = scores[:neg_index] + scores[pos_index+1:]
-    response = self.get_response(sentiment, emotion_matrix)
+    # sentiment = 0
+    # pos_index = self.labels.index('positive')
+    # neg_index = self.labels.index('negative')
+    # if scores[pos_index] > scores[neg_index]: 
+    #   sentiment = 1
+    # elif scores[neg_index] > scores[pos_index]:
+    #   sentiment = -1
+    # emotion_matrix = scores[:neg_index] + scores[pos_index+1:]
+    response = self.get_response(scores)
     return response
 
 if __name__ == '__main__':
