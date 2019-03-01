@@ -385,13 +385,12 @@ class Chatbot:
                 cont_check = line.lower()
                 cont_check = re.sub(self.continuation_begin,self.CONT_BEGIN,cont_check)
                 cont_check = re.sub(self.continuation_end,self.CONT_END,cont_check)
-                #TODO: need to check if they feel the same
                 if self.last_sentiment and self.INFLECT in inflect_check:
                   new_emotion = self.last_sentiment * -1
                   self.user_sentiment[movie_indices[0]] = creative_mapper[new_emotion]
                   self.last_sentiment = new_emotion
                   responses.append(get_response_for_sentiment(movie,new_emotion))
-                elif self.CONT_BEGIN in cont_check or self.CONT_END in cont_check:
+                elif self.last_sentiment and (self.CONT_BEGIN in cont_check or self.CONT_END in cont_check):
                   self.user_sentiment[movie_indices[0]] = creative_mapper[self.last_sentiment]
                   responses.append(get_response_for_sentiment(movie,self.last_sentiment))
                 else:
