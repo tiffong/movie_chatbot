@@ -74,7 +74,8 @@ class Chatbot:
                                        "You really liked \"{}\".",
                                        "\"{}\" was REALLY good to you. Nice.",
                                        "You think that \"{}\" was excellent!",
-                                       "Good to know you think that \"{}\" was amazing!"]
+                                       "Good to know you think that \"{}\" was amazing!",
+                                       "It's great that you loved \"{}\""]
       self.positive_responses = ["I am glad you liked \"{}\".",
                                  "So you enjoyed the film \"{}\".",
                                  "So you enjoyed the movie \"{}\". Good to know.",
@@ -141,7 +142,7 @@ class Chatbot:
 
       # User sentiment code
       self.detector = EmotionDetector()
-      self.detector.read_lexicon("deps/nrc-emotion-lexicon.txt")
+      self.detector.read_lexicon("deps/nrc_condensed_lexicon.txt")
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -236,20 +237,20 @@ class Chatbot:
       def add_reccomendations_to_response():
         recommendation_responses = []
         recommendation = self.recommend(self.user_sentiment, self.ratings, k=5, creative=True)
-        recommended_movies = []
-        for i in range(len(recommendation)):
-          movie_title = self.titles[recommendation[i]][0]
-          movie_title = movie_title.split(' (')[0]
-          recommended_movies.append(movie_title)
+        # recommended_movies = []
+        # for i in range(len(recommendation)):
+        #   movie_title = self.titles[recommendation[i]][0]
+        #   movie_title = movie_title.split(' (')[0]
+        #   recommended_movies.append(movie_title)
         num = random.randint(0, 6)
         # num = 5
 
         if num < 3:  # give one movie recommendation
           recommendation_responses.append(random.choice(self.announcing_recommendation_responses))
-          recommendation_responses.append(random.choice(self.recommendation_templates).replace('{}', recommended_movies[0]))
+          recommendation_responses.append(random.choice(self.recommendation_templates).replace('{}', get_movie_title(recommendation[0])))
           recommendation_responses.append("Tell me about more movies to get another recommendation! (Or enter :quit if you're done.)")
         else:  # give three movie recommendations
-          movies_list = "\"{}\",\"{}\",\"{}\".".format(recommended_movies[0],recommended_movies[1],recommended_movies[2])
+          movies_list = "\"{}\",\"{}\",\"{}\".".format(get_movie_title(recommendation[0]),get_movie_title(recommendation[1]),get_movie_title(recommendation[2]))
           recommendation_responses.append(random.choice(self.announcing_recommendation_responses_multiple))
           recommendation_responses.append(random.choice(self.recommendation_multiple_movies).replace('{}', movies_list))
           recommendation_responses.append("Tell me about more movies to get more movie recommendations! (Or enter :quit if you're done.)")
@@ -306,9 +307,11 @@ class Chatbot:
 
 
         #user was corrected and said 'yes to the corrected movie'
+        self.typed_yes = False
         if (line.lower() in self.agreement_words):
           self.typed_yes = True
         if (self.user_was_corrected and self.typed_yes):
+          print(line)
           responses.append('Great. You meant: ' + self.corrected_movies[0] + '. I added your review to my system.')
           self.user_sentiment[self.corrected_movie_index[0]] = self.saved_sentiment
           self.last_sentiment = self.saved_sentiment
@@ -337,12 +340,15 @@ class Chatbot:
           possible_movies = self.disambiguate(line, self.mult_movie_options)
           if len(possible_movies) == 1:
             responses.append(get_response_for_sentiment(get_movie_title(possible_movies[0]),self.saved_sentiment))
-            responses.append(random.choice(self.asking_for_more_responses))
             self.user_sentiment[possible_movies[0]] = creative_mapper[self.saved_sentiment]
             self.last_sentiment = self.saved_sentiment
             self.saved_sentiment = 0
             self.mult_movie_options = []
             self.disambiguate_on = False
+            if np.count_nonzero(self.user_sentiment) < 5: # check to see if ready for recommendations
+              responses.append(random.choice(self.asking_for_more_responses))
+            else:
+              responses.append(add_reccomendations_to_response())
           else: #continue to disambiguate if more than one movie is possible
             responses.append("Based on your response, I narrowed it down to " + str(len(self.mult_movie_options)) + " movies:")
             for i in possible_movies:
@@ -397,7 +403,10 @@ class Chatbot:
               else:
                 responses.append(add_reccomendations_to_response())
           else:
-            if not spell_check():
+            emotion_response = self.detector.extract_emotion(line)
+            if len(emotion_response) != 0:
+              responses.append(emotion_response)
+            elif not spell_check():
               responses.append("I do not understand.")
               responses.append(random.choice(self.asking_for_more_responses))
             emotion_response = self.detector.extract_emotion(line)
@@ -517,6 +526,7 @@ class Chatbot:
       titles = []
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
+        if len(titles) > 0: return titles #return if a title was found
         text = re.sub(r'[^\w\s]', '', text)
         tokens = text.split(' ')
         # gets substrings of the text input and tries to find movie titles that match
@@ -1091,20 +1101,19 @@ class EmotionDetector():
 
   def __init__(self):
     self.lexicon = {}
-    self.labels = ['anger', 'anticipation', 'disgust', 'fear',
-              'joy', 'negative', 'positive', 'sadness',
-                'surprise', 'trust']
+    self.labels = ['anger', 'disgust', 'fear',
+              'joy', 'sadness',
+                'surprise']
 
-    self.emotions = ['anger', 'anticipation', 'disgust', 'fear',
-              'joy','sadness', 'surprise', 'trust']
+    self.emotions = ['anger', 'disgust', 'fear',
+              'joy','sadness', 'surprise']
 
-    self.responses = ["You sound angry. Did I upset you?", "You sound excited! Are you looking forward to any movies?", 
-              "You sound disgusted. Did I recommend something you don't like?", 
-              "You sound afraid! Was my recommendation too spooky?", 
-              "You sound happy! I hope I'm doing a good job so far.", 
-              "You sound sad. Are you having a bad day?", 
-              "You sound surprised! Did I recommend something unexpected?", 
-              "You sound like you trust me! I'm glad we share the same taste in movies."]
+    self.responses = ["You sound angry. Did I upset you?",
+              "You sound disgusted. Did I recommend something you don't like?",
+              "You sound afraid! Was my recommendation too spooky?",
+              "You sound happy! I hope I'm doing a good job so far.",
+              "You sound sad. Are you having a bad day?",
+              "You sound surprised! Did I recommend something unexpected?"]
 
   # Reads in the lexicon given a filename
   # Currently geared towards the NRC Emotional Lexicon
@@ -1126,17 +1135,18 @@ class EmotionDetector():
           emotion_array = [tokens[1]]
           self.lexicon[word] = emotion_array
 
-  # Returns a response based on the sentiment and 
+  # Returns a response based on the sentiment and
   # emotion matrix
-  def get_response(self, sentiment, matrix):
+  def get_response(self, matrix):
     matrix = np.array(matrix)
     if np.count_nonzero(matrix) == 0:
-      if sentiment < 0:
-        return "You sound upset. Did I hurt you?"
-      elif sentiment > 0:
-        return "You sound happy! I hope I'm doing a good job so far."
-      else:
-        return "Sounds interesting! I hope I'm doing a good job so far!"
+      return ''
+    #   if sentiment < 0:
+    #     return "You sound upset. Did I hurt you?"
+    #   elif sentiment > 0:
+    #     return "You sound happy! I hope I'm doing a good job so far."
+    #   else:
+    #     return ""
     # print(matrix)
     max_val = np.amax(matrix)
     poss_emotions = []
@@ -1145,7 +1155,7 @@ class EmotionDetector():
     if 'anger' in poss_emotions and 'fear' in poss_emotions:
       return self.responses[self.emotions.index('fear')]
     return self.responses[self.emotions.index(poss_emotions[0])]
-    
+
 
   # Extracts the emotion from a given line
   def extract_emotion(self, line):
@@ -1159,19 +1169,17 @@ class EmotionDetector():
         for e in emotions:
           index = self.labels.index(e)
           scores[index] += 1
-    sentiment = 0
-    pos_index = self.labels.index('positive')
-    neg_index = self.labels.index('negative')
-    if scores[pos_index] > scores[neg_index]: 
-      sentiment = 1
-    elif scores[neg_index] > scores[pos_index]:
-      sentiment = -1
-    emotion_matrix = scores[:neg_index] + scores[pos_index+1:]
-    response = self.get_response(sentiment, emotion_matrix)
+    # sentiment = 0
+    # pos_index = self.labels.index('positive')
+    # neg_index = self.labels.index('negative')
+    # if scores[pos_index] > scores[neg_index]:
+    #   sentiment = 1
+    # elif scores[neg_index] > scores[pos_index]:
+    #   sentiment = -1
+    # emotion_matrix = scores[:neg_index] + scores[pos_index+1:]
+    response = self.get_response(scores)
     return response
 
 if __name__ == '__main__':
   print('To run your chatbot in an interactive loop from the command line, run:')
   print('    python3 repl.py')
-
-
