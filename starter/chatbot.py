@@ -58,6 +58,10 @@ class Chatbot:
       self.clause_negation = r'but not|and not|although not|though not|even though not|even if not'
       self.INFLECT = '__inflect__'
       self.sentence_inflection_splitters = r'but|although|because|since|though|even though|even if'
+      self.continuation_begin = r'\A(as well as|also|and|along with|in addition to|plus|likewise)'
+      self.CONT_BEGIN = '__CONTBEGIN__'
+      self.continuation_end = r'(likewise|too|also)\Z'
+      self.CONT_END = '__CONTEND__'
       self.agreement_words = ['yes', 'yeah', 'yup', 'mhm', 'mhmm', 'yep', 'yuh', 'yah', 'ya', 'y', 'of course', 'duh', 'mhmmm', 'ok', 'okey-dokey', 'affirmative', 'uh-huh', 'yuppers', 'very well', 'ja', 'sure', 'yessir']
       self.affirmation_words = ['Great', 'Awesome', 'Sounds good', 'Gotcha']
       self.sent_words = ['liked', 'loved', 'like', 'enjoy', 'love', 'is', 'are']
@@ -362,15 +366,20 @@ class Chatbot:
                 if not spell_check():
                   responses.append("{} is not a valid movie.".format(movie))
               elif len(movie_indices) == 1 and sentiment == 0:
-                # if self.clause_negation.
-                line2 = line.lower()
-                line2 = re.sub(self.clause_negation, self.INFLECT,line2)
+                inflect_check = line.lower()
+                inflect_check = re.sub(self.clause_negation, self.INFLECT,inflect_check)
+                cont_check = line.lower()
+                cont_check = re.sub(self.continuation_begin,self.CONT_BEGIN,cont_check)
+                cont_check = re.sub(self.continuation_end,self.CONT_END,cont_check)
                 #TODO: need to check if they feel the same
-                if self.last_sentiment and self.INFLECT in line2:
+                if self.last_sentiment and self.INFLECT in inflect_check:
                   new_emotion = self.last_sentiment * -1
                   self.user_sentiment[movie_indices[0]] = creative_mapper[new_emotion]
-                  self.saved_sentiment = new_emotion
+                  self.last_sentiment = new_emotion
                   responses.append(get_response_for_sentiment(movie,new_emotion))
+                elif self.CONT_BEGIN in cont_check or self.CONT_END in cont_check:
+                  self.user_sentiment[movie_indices[0]] = creative_mapper[self.last_sentiment]
+                  responses.append(get_response_for_sentiment(movie,self.last_sentiment))
                 else:
                   responses.append("How do you feel about the movie {}?".format(movie))
                   self.asked_a_question = True
