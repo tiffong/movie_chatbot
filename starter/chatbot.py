@@ -140,7 +140,7 @@ class Chatbot:
 
       # User sentiment code
       self.detector = EmotionDetector()
-      self.detector.read_lexicon("deps/nrc-emotion-lexicon.txt")
+      self.detector.read_lexicon("deps/nrc_condensed_lexicon.txt")
 
       #############################################################################
       #                             END OF YOUR CODE                              #
@@ -262,7 +262,7 @@ class Chatbot:
         def spell_check():
           if (len(self.corrected_movies) > 0):
             responses.append('Did you mean to type: ' + self.corrected_movies[0] + '?')
-            self.user_was_corrected =s True
+            self.user_was_corrected = True
             self.saved_sentiment = self.extract_sentiment(format(line))
             # print(self.saved_sentiment)
             return True
