@@ -1094,6 +1094,7 @@ class Chatbot:
       Creative mode features in process():
       - understanding references to things said previously
       - identifying and responding to emotions
+      - recommends a movie depending on user emotion
       - dialogue for spellchecking
       - dialogue for disambiguation
       - communicating sentiments and movies extracted
