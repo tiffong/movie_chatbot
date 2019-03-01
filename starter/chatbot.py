@@ -1141,13 +1141,6 @@ class EmotionDetector():
     matrix = np.array(matrix)
     if np.count_nonzero(matrix) == 0:
       return ''
-    #   if sentiment < 0:
-    #     return "You sound upset. Did I hurt you?"
-    #   elif sentiment > 0:
-    #     return "You sound happy! I hope I'm doing a good job so far."
-    #   else:
-    #     return ""
-    # print(matrix)
     max_val = np.amax(matrix)
     poss_emotions = []
     for i in range(len(matrix)):
