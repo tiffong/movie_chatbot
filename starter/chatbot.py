@@ -512,6 +512,7 @@ class Chatbot:
       titles = []
       if self.creative:
         titles = re.findall('\"(?:((?:\".+?\")?.+?[^ ]))\"', text)
+        if len(titles) > 0: return titles #return if a title was found
         text = re.sub(r'[^\w\s]', '', text)
         tokens = text.split(' ')
         # gets substrings of the text input and tries to find movie titles that match
