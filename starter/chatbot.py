@@ -35,10 +35,10 @@ class Chatbot:
       sentiment = movielens.sentiment()
       self.porterStemmer = PorterStemmer()
       # self.sentiment = sentiment
-      self.sentiment = {} #TODO: combine the sentiments for  creative instead of two
+      self.sentiment = {}
       for word in sentiment:
           self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
-      with open('deps/polarity_scores.txt', 'r') as f:   #TODO: stem this data beforehand
+      with open('deps/polarity_scores.txt', 'r') as f:
         reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
         next(reader)
         creative_sentiment = dict(reader)
@@ -183,11 +183,7 @@ class Chatbot:
     # 2. Modules 2 and 3: extraction and transformation                           #
     ###############################################################################
 
-    def process_helper(self, movies, sentiment):
-      #TODO: place process code that will be used in both starter and creative mode
-      return 0
-
-    def process(self, line):  #TODO: there might be too many new lines floating around
+    def process(self, line):
       """Process a line of input from the REPL and generate a response.
 
       This is the method that is called by the REPL loop directly with user input.
@@ -360,7 +356,7 @@ class Chatbot:
           movies, movie_sentiments = get_movies_and_sentiments(line)
 
           if len(movies) > 0: # respond to each of the movies
-            for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
+            for movie,sentiment in movie_sentiments:
               movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
               if len(movie_indices) == 0: # the movie was not found
                 if not spell_check():
@@ -645,7 +641,7 @@ class Chatbot:
     def get_user_emotion(self, text):
       pass
 
-    def extract_sentiment(self, text): #TODO: combine creative and simple into cleaner version
+    def extract_sentiment(self, text):
       """Extract a sentiment rating from a line of text.
 
       You should return -1 if the sentiment of the text is negative, 0 if the
@@ -785,12 +781,34 @@ class Chatbot:
       # split into phrases
       text = re.sub(self.clause_negation,self.INFLECT,text)
       phrases = re.split(self.sentence_inflection_splitters,text)
-      #TODO: two complete thoughts with and
-
       if len(phrases) > 1 and ('__' not in phrases[1] or len(nltk.word_tokenize(phrases[1])) == 1):
         phrases = [text]
       sentiments = []
+      special = []
       for phrase in phrases:
+        done = False
+        if phrase.count('and') == 1:
+          parts = phrase.split('and')
+          if '_' in parts[0] and '_' in parts[1]:
+            part_one = re.sub(r'__\d__?','',parts[0]).strip()
+            part_two = re.sub(r'__\d__?','',parts[1]).strip()
+            sentiment_left = self.extract_sentiment(part_one)
+            sentiment_right = self.extract_sentiment(part_two)
+            if sentiment_left == '' or sentiment_right == '':
+              break
+            if sentiment_left != sentiment_right:
+              special.extend(parts)
+              done = True
+        if done:
+          continue
+        sentiment = self.extract_sentiment(phrase)
+        tokens = nltk.word_tokenize(phrase)
+        for token in tokens:
+          if token == self.INFLECT:
+            sentiment *= -1
+          if token in index:
+            sentiments.append((index[token], sentiment))
+      for phrase in special:
         sentiment = self.extract_sentiment(phrase)
         tokens = nltk.word_tokenize(phrase)
         for token in tokens:
