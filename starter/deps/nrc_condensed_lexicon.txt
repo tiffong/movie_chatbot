@@ -814,9 +814,6 @@ lying	disgust	1
 lynch	anger	1
 lynch	fear	1
 mad	anger	1
-mad	disgust	1
-mad	fear	1
-mad	sadness	1
 madden	anger	1
 madden	fear	1
 magical	joy	1

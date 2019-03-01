@@ -364,9 +364,9 @@ class Chatbot:
             else:
               responses.append(add_reccomendations_to_response())
           else: #continue to disambiguate if more than one movie is possible
-            responses.append("Based on your response, I narrowed it down to " + str(len(self.mult_movie_options)) + " movies:")
+            responses.append("Based on your response, I narrowed it down to " + str(len(possible_movies)) + " movies:")
             for i in possible_movies:
-              responses.append(self.mult_movie_options[i][0])
+              responses.append(self.titles[i][0])
             responses.append("To which of these are you referring?")
             self.mult_movie_options = possible_movies
 
@@ -405,7 +405,8 @@ class Chatbot:
                   responses.append(self.titles[i][0])
                 responses.append('To which of these films are you referring?')
                 self.saved_sentiment = sentiment
-                self.mult_movie_options = movie_indices
+                self.mult_movie_options += movie_indices
+                self.mult_movie_options = list(set(self.mult_movie_options))
                 self.disambiguate_on = True
                 self.last_sentiment = None
               else: # add a response for that movie
@@ -424,7 +425,6 @@ class Chatbot:
           else:
             emotion_response, emotion = self.detector.extract_emotion(line)
             if len(emotion_response) != 0:
-              print(emotion_response)
               responses.append(emotion_response)
               emotion_movie = self.recommend_emotion_movie(emotion)
               responses.append(get_emotion_movie_response(emotion, emotion_movie))
