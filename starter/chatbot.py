@@ -37,10 +37,10 @@ class Chatbot:
       sentiment = movielens.sentiment()
       self.porterStemmer = PorterStemmer()
       # self.sentiment = sentiment
-      self.sentiment = {} #TODO: combine the sentiments for  creative instead of two
+      self.sentiment = {}
       for word in sentiment:
           self.sentiment[self.porterStemmer.stem(word)] = sentiment[word]
-      with open('deps/polarity_scores.txt', 'r') as f:   #TODO: stem this data beforehand
+      with open('deps/polarity_scores.txt', 'r') as f:
         reader = csv.reader(f, delimiter=',', quoting=csv.QUOTE_MINIMAL)
         next(reader)
         creative_sentiment = dict(reader)
@@ -60,6 +60,10 @@ class Chatbot:
       self.clause_negation = r'but not|and not|although not|though not|even though not|even if not'
       self.INFLECT = '__inflect__'
       self.sentence_inflection_splitters = r'but|although|because|since|though|even though|even if'
+      self.continuation_begin = r'\A(as well as|also|and|along with|in addition to|plus|likewise)'
+      self.CONT_BEGIN = '__CONTBEGIN__'
+      self.continuation_end = r'(likewise|too|also)\Z'
+      self.CONT_END = '__CONTEND__'
       self.agreement_words = ['yes', 'yeah', 'yup', 'mhm', 'mhmm', 'yep', 'yuh', 'yah', 'ya', 'y', 'of course', 'duh', 'mhmmm', 'ok', 'okey-dokey', 'affirmative', 'uh-huh', 'yuppers', 'very well', 'ja', 'sure', 'yessir']
       self.affirmation_words = ['Great', 'Awesome', 'Sounds good', 'Gotcha']
       self.sent_words = ['liked', 'loved', 'like', 'enjoy', 'love', 'is', 'are']
@@ -185,11 +189,7 @@ class Chatbot:
     # 2. Modules 2 and 3: extraction and transformation                           #
     ###############################################################################
 
-    def process_helper(self, movies, sentiment):
-      #TODO: place process code that will be used in both starter and creative mode
-      return 0
-
-    def process(self, line):  #TODO: there might be too many new lines floating around
+    def process(self, line):
       """Process a line of input from the REPL and generate a response.
 
       This is the method that is called by the REPL loop directly with user input.
@@ -374,21 +374,26 @@ class Chatbot:
           movies, movie_sentiments = get_movies_and_sentiments(line)
 
           if len(movies) > 0: # respond to each of the movies
-            for movie,sentiment in movie_sentiments: #TODO: rearrange this to do things liked,loved,and invalid in chunks
+            for movie,sentiment in movie_sentiments:
               movie_indices = self.find_movies_by_title(movie) # try to find that movie in the database
               if len(movie_indices) == 0: # the movie was not found
                 if not spell_check():
                   responses.append("{} is not a valid movie.".format(movie))
               elif len(movie_indices) == 1 and sentiment == 0:
-                # if self.clause_negation.
-                line2 = line.lower()
-                line2 = re.sub(self.clause_negation, self.INFLECT,line2)
+                inflect_check = line.lower()
+                inflect_check = re.sub(self.clause_negation, self.INFLECT,inflect_check)
+                cont_check = line.lower()
+                cont_check = re.sub(self.continuation_begin,self.CONT_BEGIN,cont_check)
+                cont_check = re.sub(self.continuation_end,self.CONT_END,cont_check)
                 #TODO: need to check if they feel the same
-                if self.last_sentiment and self.INFLECT in line2:
+                if self.last_sentiment and self.INFLECT in inflect_check:
                   new_emotion = self.last_sentiment * -1
                   self.user_sentiment[movie_indices[0]] = creative_mapper[new_emotion]
-                  self.saved_sentiment = new_emotion
+                  self.last_sentiment = new_emotion
                   responses.append(get_response_for_sentiment(movie,new_emotion))
+                elif self.CONT_BEGIN in cont_check or self.CONT_END in cont_check:
+                  self.user_sentiment[movie_indices[0]] = creative_mapper[self.last_sentiment]
+                  responses.append(get_response_for_sentiment(movie,self.last_sentiment))
                 else:
                   responses.append("How do you feel about the movie {}?".format(movie))
                   self.asked_a_question = True
@@ -780,12 +785,34 @@ class Chatbot:
       # split into phrases
       text = re.sub(self.clause_negation,self.INFLECT,text)
       phrases = re.split(self.sentence_inflection_splitters,text)
-      #TODO: two complete thoughts with and
-
       if len(phrases) > 1 and ('__' not in phrases[1] or len(nltk.word_tokenize(phrases[1])) == 1):
         phrases = [text]
       sentiments = []
+      special = []
       for phrase in phrases:
+        done = False
+        if phrase.count('and') == 1:
+          parts = phrase.split('and')
+          if '_' in parts[0] and '_' in parts[1]:
+            part_one = re.sub(r'__\d__?','',parts[0]).strip()
+            part_two = re.sub(r'__\d__?','',parts[1]).strip()
+            sentiment_left = self.extract_sentiment(part_one)
+            sentiment_right = self.extract_sentiment(part_two)
+            if sentiment_left == '' or sentiment_right == '':
+              break
+            if sentiment_left != sentiment_right:
+              special.extend(parts)
+              done = True
+        if done:
+          continue
+        sentiment = self.extract_sentiment(phrase)
+        tokens = nltk.word_tokenize(phrase)
+        for token in tokens:
+          if token == self.INFLECT:
+            sentiment *= -1
+          if token in index:
+            sentiments.append((index[token], sentiment))
+      for phrase in special:
         sentiment = self.extract_sentiment(phrase)
         tokens = nltk.word_tokenize(phrase)
         for token in tokens:
